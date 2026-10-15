@@ -1,0 +1,474 @@
+@import "tailwindcss";
+
+:root {
+  --mist: #E9EEF5;
+  --brand: #74C947;
+  --brand2: #8ce05c;
+  --go: #34D399;
+  --alert: #FF4D5E;
+  --sky: #38BDF8;
+  --violet: #A78BFA;
+  --teal: #2DD4BF;
+  --amber: #FFB224;
+  --rose: #FF7A9C;
+}
+
+html {
+  background: #000000;
+  color: var(--mist);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: auto;
+}
+
+body {
+  background: #000000;
+  color: var(--mist);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: visible;
+  overscroll-behavior: auto;
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--brand);
+  color: #081a05;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(116, 201, 71, 0.5);
+}
+
+.mono-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(233, 238, 245, 0.45);
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(16, 20, 32, 0.55);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(233, 238, 245, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+.glass-strong {
+  background: rgba(13, 17, 28, 0.76);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px rgba(0, 0, 0, 0.6);
+}
+
+.liquid {
+  position: relative;
+  overflow: hidden;
+}
+.liquid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(180px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.1), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.45s;
+}
+.liquid:hover::before {
+  opacity: 1;
+}
+
+/* Buttons */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  background: var(--brand);
+  color: #081a05;
+  font-weight: 800;
+  box-shadow: 0 12px 34px rgba(116, 201, 71, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3), box-shadow 0.35s, filter 0.35s;
+  will-change: transform;
+}
+.btn-primary:hover {
+  filter: brightness(1.07);
+  box-shadow: 0 18px 48px rgba(116, 201, 71, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  filter: brightness(0.9);
+  transform: translateY(1px);
+}
+.btn-primary .shine {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 36%;
+  left: -55%;
+  background: rgba(255, 255, 255, 0.35);
+  transform: skewX(-22deg);
+  pointer-events: none;
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-primary:hover .shine {
+  left: 118%;
+}
+
+.btn-glass {
+  position: relative;
+  overflow: hidden;
+  background: rgba(233, 238, 245, 0.06);
+  border: 1px solid rgba(233, 238, 245, 0.16);
+  color: var(--mist);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 0.35s, transform 0.35s, color 0.35s, background 0.35s;
+}
+.btn-glass:hover {
+  border-color: var(--c, var(--brand));
+  color: #fff;
+  transform: translateY(-2px);
+  background: rgba(233, 238, 245, 0.1);
+}
+
+/* Chips & Modes */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(233, 238, 245, 0.8);
+  background: rgba(233, 238, 245, 0.06);
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+.chip .cdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c, var(--brand));
+  transition: transform 0.25s;
+}
+.chip:hover {
+  border-color: var(--c, var(--brand));
+  transform: translateY(-1px);
+  background: rgba(233, 238, 245, 0.12);
+}
+.chip:hover .cdot {
+  transform: scale(1.3);
+}
+
+/* Explicit Active Chip State */
+.chip.on {
+  background: color-mix(in srgb, var(--c, var(--brand)) 18%, transparent) !important;
+  border-color: var(--c, var(--brand)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c, var(--brand)) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+.chip.on .cdot {
+  transform: scale(1.4);
+  box-shadow: 0 0 8px var(--c, var(--brand));
+}
+
+/* Pulse dots */
+.srv-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--alert);
+  flex: none;
+  box-shadow: 0 0 0 0 rgba(255, 77, 94, 0.5);
+  animation: srvPulse 1.6s infinite;
+}
+.srv-dot.ok {
+  background: var(--brand);
+  box-shadow: 0 0 0 0 rgba(116, 201, 71, 0.5);
+}
+@keyframes srvPulse {
+  70% { box-shadow: 0 0 0 8px rgba(116, 201, 71, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(116, 201, 71, 0); }
+}
+
+/* Film Grain Overlay */
+.grain {
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Custom form fields */
+.mfield {
+  width: 100%;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--mist);
+  background: rgba(233, 238, 245, 0.05);
+  border: 1px solid rgba(233, 238, 245, 0.14);
+  outline: none;
+  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+.mfield:focus {
+  border-color: var(--brand);
+  background: rgba(233, 238, 245, 0.08);
+  box-shadow: 0 0 0 3px rgba(116, 201, 71, 0.15);
+}
+.mfield::placeholder {
+  color: rgba(233, 238, 245, 0.3);
+}
+
+/* Explicit icon inset classes for fields */
+.mfield.has-icon-left {
+  padding-left: 48px !important;
+}
+.mfield.has-icon-right {
+  padding-right: 48px !important;
+}
+
+/* Demo account button glow pulse */
+.pulseGlow {
+  animation: pg 1.6s ease-out 2 !important;
+}
+@keyframes pg {
+  0%, 100% {
+    box-shadow: 0 12px 34px rgba(116, 201, 71, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 12px 48px rgba(116, 201, 71, 0.85), 0 0 24px rgba(116, 201, 71, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* Universal cursor visibility guarantee */
+html, body {
+  cursor: default;
+}
+a, button, [role="button"], select, input[type="submit"], input[type="button"], .clickable {
+  cursor: pointer !important;
+}
+input[type="text"], input[type="email"], input[type="password"], textarea {
+  cursor: text !important;
+}
+
+/* ========================================================================= */
+/* WHATSAPP-STYLE SIGNATURE WAVE FILL BUTTON ANIMATION                       */
+/* Wave: Deep Black (#000000) · Hover Text & Icons: Pure White (#ffffff)     */
+/* ========================================================================= */
+
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day),
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day),
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row) {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  transition: color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+/* The rising wave: curved crest that floods up from below in luminous emerald (#74C947) */
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day)::before,
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day)::before,
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row)::before {
+  content: "" !important;
+  position: absolute !important;
+  left: -65% !important;
+  right: -65% !important;
+  top: 112% !important;
+  height: 540% !important;
+  background: #74C947 !important; /* Luminous Emerald Matrix Green signature wave */
+  border-radius: 50% 50% 0 0 !important;
+  transition: top 0.9s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* Wave floods up and completely covers the button */
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover::before,
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover::before,
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):hover::before {
+  top: -160% !important;
+  transition: top 1.1s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+/* Button pops out and raises up on hover with refined luminous emerald rim */
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover,
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover,
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):hover {
+  transform: translateY(-2px) !important;
+  color: #081a05 !important;
+  border-color: #74C947 !important;
+  box-shadow: 0 0 0 1.5px #74C947, 0 14px 32px -4px rgba(116, 201, 71, 0.45), 0 6px 14px -2px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Ensure disabled buttons do not trigger hover wave */
+button:disabled::before,
+button[disabled]::before,
+.disabled::before {
+  display: none !important;
+}
+
+/* Button press feedback */
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):active,
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):active,
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):active {
+  transform: translateY(0px) scale(0.97) !important;
+}
+
+/* Content: text and icons sit safely above the wave (z-index: 2) */
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day) > *,
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day) > *,
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row) > * {
+  position: relative !important;
+  z-index: 2 !important;
+  transition: color 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+              stroke 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+              fill 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+/* Characters and words turn crisp OBSIDIAN BLACK (#081a05) on hover for maximum contrast */
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover *,
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover *,
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):hover * {
+  color: #081a05 !important;
+}
+
+/* Icons and SVGs turn crisp OBSIDIAN BLACK (#081a05) on hover */
+button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover svg,
+[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):not(.calendar-day):hover svg,
+.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.whatsapp-reply-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.whatsapp-cta-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.iphone-liquid-pill:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+a.btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+a.btn-primary:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+a.btn-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.rail-dot):not(.feature-row):hover svg {
+  color: #081a05 !important;
+  stroke: #081a05 !important;
+}
+
+/* Explicit exclusion for SchedFlow Assistant, rail-dots, feature-rows, and designated no-wave */
+.ai-assistant-widget button::before,
+.ai-assistant-widget [role="button"]::before,
+.no-wave::before,
+[data-no-wave="true"]::before,
+.rail-dot::before,
+.feature-row::before {
+  display: none !important;
+  content: none !important;
+}

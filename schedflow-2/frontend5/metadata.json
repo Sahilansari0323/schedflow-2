@@ -1,0 +1,7 @@
+{
+  "name": "Aura",
+  "description": "Aura is the premier AI-native email client platform, revitalizing your inbox with cinematic speed and clarity.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

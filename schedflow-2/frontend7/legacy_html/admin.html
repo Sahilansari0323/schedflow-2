@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black text-mist">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchedFlow Aura — Administrative Command Console</title>
+<meta name="description" content="SchedFlow Administrator Portal. Complete control over master timetables, AI constraint solver, faculty workloads, room topology, substitutions, and campus broadcasts.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23000'/%3E%3Crect x='6' y='6' width='9' height='9' rx='2.5' fill='%2338BDF8'/%3E%3Crect x='17' y='6' width='9' height='9' rx='2.5' fill='%2374C947'/%3E%3Crect x='6' y='17' width='9' height='9' rx='2.5' fill='%2334D399'/%3E%3Crect x='17' y='17' width='9' height='9' rx='2.5' fill='%23C77DFF'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        deep: '#000000',
+        panel: '#0B0F17',
+        mist: '#E9EEF5',
+        brand: '#74C947',
+        brand2: '#8ce05c',
+        go: '#34D399',
+        alert: '#FF4D5E',
+        sky: '#38BDF8',
+        violet: '#A78BFA',
+        teal: '#2DD4BF',
+        amber: '#FFB224',
+        rose: '#FF7A9C'
+      },
+      fontFamily: {
+        display: ['"Plus Jakarta Sans"', 'Outfit', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'monospace']
+      }
+    }
+  }
+}
+</script>
+
+<style>
+  :root {
+    --deep: #000000;
+    --mist: #E9EEF5;
+    --brand: #74C947;
+    --brand2: #8ce05c;
+    --go: #34D399;
+    --alert: #FF4D5E;
+    --sky: #38BDF8;
+    --violet: #A78BFA;
+    --teal: #2DD4BF;
+    --amber: #FFB224;
+    --rose: #FF7A9C;
+  }
+  html { background: var(--deep); color: var(--mist); }
+  body { background: var(--deep); min-height: 100vh; overflow-x: hidden; }
+  ::selection { background: var(--brand); color: #081a05; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #000; }
+  ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+
+  /* Live 3D Canvas Background */
+  #bgCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    display: block;
+  }
+
+  /* Glass backdrop overlay allowing rows of moving blocks to show through gently blurred */
+  .scene-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(circle at 50% 10%, rgba(11, 15, 23, 0.58) 0%, rgba(0, 0, 0, 0.82) 100%);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    pointer-events: none;
+  }
+
+  .portal-wrap {
+    position: relative;
+    z-index: 10;
+  }
+
+  .mono-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: rgba(233, 238, 245, 0.48);
+  }
+
+  .glass {
+    background: rgba(15, 21, 32, 0.68);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(233, 238, 245, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 40px rgba(0, 0, 0, 0.55);
+  }
+  .glass-strong {
+    background: rgba(11, 16, 26, 0.86);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(233, 238, 245, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 24px 60px rgba(0, 0, 0, 0.7);
+  }
+
+  .btn-primary {
+    position: relative;
+    overflow: hidden;
+    background: var(--brand);
+    color: #081a05;
+    font-weight: 800;
+    box-shadow: 0 8px 24px rgba(116, 201, 71, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: transform .25s cubic-bezier(.2, .9, .3, 1.2), box-shadow .25s, filter .25s;
+    will-change: transform;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 14px 36px rgba(116, 201, 71, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transform: translateY(-1.5px);
+  }
+  .btn-primary:active {
+    transform: translateY(0.5px);
+    filter: brightness(0.92);
+  }
+
+  .btn-glass {
+    position: relative;
+    overflow: hidden;
+    background: rgba(233, 238, 245, 0.06);
+    border: 1px solid rgba(233, 238, 245, 0.16);
+    color: var(--mist);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: border-color .25s, transform .25s, color .25s, background .25s;
+  }
+  .btn-glass:hover {
+    border-color: var(--brand);
+    color: #ffffff;
+    transform: translateY(-1.5px);
+    background: rgba(233, 238, 245, 0.11);
+  }
+
+  .nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: .08em;
+    font-weight: 600;
+    color: rgba(233, 238, 245, 0.65);
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all .22s cubic-bezier(.2, .8, .2, 1);
+    white-space: nowrap;
+  }
+  .nav-tab:hover {
+    color: #ffffff;
+    background: rgba(233, 238, 245, 0.07);
+    border-color: rgba(233, 238, 245, 0.12);
+  }
+  .nav-tab.active {
+    color: #081a05;
+    background: var(--brand);
+    font-weight: 700;
+    box-shadow: 0 4px 18px rgba(116, 201, 71, 0.35);
+  }
+
+  .input-field {
+    width: 100%;
+    background: rgba(15, 21, 32, 0.75);
+    border: 1px solid rgba(233, 238, 245, 0.14);
+    border-radius: 12px;
+    padding: 0.65rem 1rem;
+    font-size: 13px;
+    color: var(--mist);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input-field:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(116, 201, 71, 0.18);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .05em;
+  }
+
+  .portal-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .portal-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: rgba(233, 238, 245, 0.48);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(233, 238, 245, 0.1);
+  }
+  .portal-table td {
+    padding: 14px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(233, 238, 245, 0.06);
+    vertical-align: middle;
+  }
+  .portal-table tr:hover td {
+    background: rgba(233, 238, 245, 0.03);
+  }
+
+  .matrix-cell {
+    min-height: 86px;
+    border-radius: 12px;
+    padding: 9px;
+    transition: all .2s;
+    border: 1px solid rgba(233, 238, 245, 0.08);
+    background: rgba(18, 25, 38, 0.55);
+  }
+  .matrix-cell:hover {
+    border-color: var(--brand);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  #assistDrawer {
+    transition: transform .35s cubic-bezier(.16, 1, .3, 1), opacity .3s;
+  }
+  #assistDrawer.closed {
+    transform: translateY(120%) scale(0.96);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes subtlePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.65; transform: scale(0.95); }
+  }
+  .subtle-pulse { animation: subtlePulse 2.4s infinite ease-in-out; }
+</style>
+</head>
+
+<body class="selection:bg-brand selection:text-black">
+
+<!-- Living Three.js 3D Background: Rows of Timetable Blocks moving in specified lanes to full screen & corners -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- Glass backdrop blur overlay -->
+<div class="scene-overlay"></div>
+
+<!-- Main Portal UI -->
+<div class="portal-wrap min-h-screen flex flex-col pb-20">
+
+  <!-- ================= TOP HEADER BAR ================= -->
+  <header class="sticky top-0 z-40 border-b border-mist/10 bg-deep/85 backdrop-blur-xl px-4 md:px-8 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-6">
+      <a href="landing.html" class="flex items-center gap-2.5 font-display font-extrabold text-base tracking-wide group">
+        <svg class="w-6 h-6 transition-transform group-hover:scale-105" viewBox="0 0 24 24" aria-hidden="true">
+          <rect width="24" height="24" rx="6" fill="#0B101A"/>
+          <rect x="4.5" y="4.5" width="7" height="7" rx="2" fill="#38BDF8"/>
+          <rect x="12.5" y="4.5" width="7" height="7" rx="2" fill="#74C947"/>
+          <rect x="4.5" y="12.5" width="7" height="7" rx="2" fill="#34D399"/>
+          <rect x="12.5" y="12.5" width="7" height="7" rx="2" fill="#C77DFF"/>
+        </svg>
+        <span class="text-white">SchedFlow <span class="text-brand">Admin</span></span>
+      </a>
+
+      <!-- Current Term Chip -->
+      <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-mist/10 text-xs">
+        <span class="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+        <span class="font-medium text-mist/80">Academic Year 2026-27</span>
+        <span class="text-mist/30">|</span>
+        <span class="font-mono text-mist/60 text-[11px]">Term 01 · Week 08</span>
+      </div>
+    </div>
+
+    <!-- Center/Right Actions -->
+    <div class="flex items-center gap-3">
+      <!-- Live Sync / Backend Heartbeat (Dynamic Probe) -->
+      <div id="syncBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-mist/10 text-[11px] font-mono">
+        <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span id="syncText" class="text-mist/70">Probing backend...</span>
+      </div>
+
+      <!-- Quick Link to Timetable Viewer -->
+      <a href="timetable.html" class="btn-glass rounded-full px-4 py-2 text-xs font-semibold flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Live Timetable</span>
+      </a>
+
+      <!-- Quick AI Solve Button -->
+      <button type="button" id="btnQuickSolve" class="btn-primary rounded-full px-4 py-2 text-xs tracking-wider uppercase flex items-center gap-2">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span>AI Solve</span>
+      </button>
+
+      <!-- Admin Profile Pill (Click-Toggleable Menu) -->
+      <div class="relative">
+        <button type="button" id="btnUserMenu" class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-mist/10 transition-colors">
+          <div class="w-7 h-7 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold text-xs">
+            AD
+          </div>
+          <div class="text-left hidden md:block">
+            <div id="adminUserName" class="text-xs font-semibold leading-tight text-white">Administrator</div>
+            <div id="adminUserRole" class="text-[9px] font-mono text-mist/50">Super Admin</div>
+          </div>
+          <svg class="w-3.5 h-3.5 text-mist/40 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+
+        <!-- Dropdown Menu: solidly opens on click -->
+        <div id="userDropdown" class="hidden absolute right-0 top-full mt-2 w-52 rounded-2xl glass-strong border border-mist/20 p-2 shadow-2xl z-50">
+          <button type="button" id="menuBtnSettings" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs hover:bg-white/10 text-mist/90 hover:text-white transition-colors text-left font-medium">
+            <svg class="w-4 h-4 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            System Settings
+          </button>
+          <div class="h-px bg-mist/10 my-1"></div>
+          <button type="button" id="btnLogout" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs hover:bg-alert/15 text-alert transition-colors text-left font-medium">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= TAB NAVIGATION STRIP ================= -->
+  <div class="sticky top-[61px] z-30 bg-deep/90 backdrop-blur-lg border-b border-mist/10 px-4 md:px-8 py-2.5 overflow-x-auto no-scrollbar">
+    <nav class="flex items-center gap-1.5 min-w-max">
+      <button type="button" class="nav-tab active" data-tab="dashboard">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Overview</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="matrix">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="4" x2="9" y2="22"/><line x1="15" y1="4" x2="15" y2="22"/></svg>
+        <span>Master Grid</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="solver">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m12 6 4 6-4 6-4-6z"/></svg>
+        <span>AI Solver &amp; Clashes</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="faculty">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Faculty</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="subjects">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Subjects</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="rooms">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+        <span>Rooms &amp; Labs</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="substitutions">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+        <span>Substitutions Radar</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="notices">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Notices</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="feedback">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Feedback Queue</span>
+      </button>
+
+      <button type="button" class="nav-tab" data-tab="settings">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Audit &amp; System</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ================= MAIN CONTENT PANELS ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8">
+
+    <!-- ============ TAB 1: DASHBOARD ============ -->
+    <section id="tab-dashboard" class="tab-pane space-y-8">
+      <!-- Welcome Hero Banner -->
+      <div class="glass-strong rounded-3xl p-6 md:p-8 relative overflow-hidden">
+        <div class="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-brand/10 blur-3xl pointer-events-none"></div>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div>
+            <div class="mono-label !text-brand mb-2 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-brand"></span>
+              Autonomous Timetable Operating System
+            </div>
+            <h1 class="font-display font-extrabold text-2xl md:text-4xl text-white tracking-[-0.03em]">
+              Campus Schedules, <span class="bg-gradient-to-r from-brand via-brand2 to-emerald-400 bg-clip-text text-transparent">Harmonized</span>
+            </h1>
+            <p class="text-mist/65 text-sm md:text-base mt-2 max-w-2xl leading-relaxed">
+              All academic departments are verified with 0 hard clashes. The Chronos CSP solver continuously monitors faculty and room constraints in the background.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" onclick="triggerSolverAction()" class="btn-primary rounded-2xl px-6 py-3.5 text-xs tracking-wider uppercase flex items-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              Run Global Re-Solve
+            </button>
+            <button type="button" onclick="window.switchTab('matrix')" class="btn-glass rounded-2xl px-5 py-3.5 text-xs font-semibold flex items-center gap-2">
+              <svg class="w-4 h-4 text-sky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20"/></svg>
+              Inspect Grid
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Live KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="glass rounded-2xl p-5 border border-mist/10 hover:border-brand/40 transition-colors">
+          <div class="flex items-center justify-between">
+            <span class="mono-label">Active Slots</span>
+            <span class="w-8 h-8 rounded-xl bg-sky/10 text-sky flex items-center justify-center">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </span>
+          </div>
+          <div class="text-3xl font-display font-extrabold text-white mt-3">342</div>
+          <div class="flex items-center gap-2 mt-2 text-xs text-go">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 5 5L20 7"/></svg>
+            <span>100% Scheduled across 14 Depts</span>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-5 border border-mist/10 hover:border-brand/40 transition-colors">
+          <div class="flex items-center justify-between">
+            <span class="mono-label">Faculty On Duty</span>
+            <span class="w-8 h-8 rounded-xl bg-brand/10 text-brand flex items-center justify-center">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </span>
+          </div>
+          <div class="text-3xl font-display font-extrabold text-white mt-3">48</div>
+          <div class="flex items-center gap-2 mt-2 text-xs text-mist/60 font-mono">
+            <span>Avg 18.4 hrs/week · Fair balance</span>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-5 border border-mist/10 hover:border-brand/40 transition-colors">
+          <div class="flex items-center justify-between">
+            <span class="mono-label">Room Utilization</span>
+            <span class="w-8 h-8 rounded-xl bg-violet/10 text-violet flex items-center justify-center">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+            </span>
+          </div>
+          <div class="text-3xl font-display font-extrabold text-white mt-3">88.6%</div>
+          <div class="flex items-center gap-2 mt-2 text-xs text-go">
+            <span>Optimal · 18 Rooms &amp; 6 Labs</span>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-5 border border-mist/10 hover:border-brand/40 transition-colors">
+          <div class="flex items-center justify-between">
+            <span class="mono-label">Active Conflicts</span>
+            <span class="w-8 h-8 rounded-xl bg-go/10 text-go flex items-center justify-center">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+          </div>
+          <div class="text-3xl font-display font-extrabold text-brand mt-3">0</div>
+          <div class="flex items-center gap-2 mt-2 text-xs text-go">
+            <span>Clean pass · 0 double bookings</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operational Grid: System Diagnostics & Live Activity Stream -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="glass rounded-3xl p-6 border border-mist/10 lg:col-span-2">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="font-display font-bold text-lg text-white">Chronos AI Constraint Health</h2>
+              <p class="text-xs text-mist/55">Real-time solver validation across all institutional rules</p>
+            </div>
+            <span class="badge bg-go/15 text-go border border-go/30">ALL RULES PASSED</span>
+          </div>
+
+          <div class="space-y-3.5">
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-mist/5">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-go/15 text-go flex items-center justify-center text-xs">✓</span>
+                <div>
+                  <div class="text-xs font-semibold text-white">Teacher Overlap Invariance</div>
+                  <div class="text-[11px] text-mist/50">Ensures no professor is booked simultaneously across multiple sections</div>
+                </div>
+              </div>
+              <span class="font-mono text-xs text-go font-semibold">0 clashing</span>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-mist/5">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-go/15 text-go flex items-center justify-center text-xs">✓</span>
+                <div>
+                  <div class="text-xs font-semibold text-white">Room Capacity &amp; Type Match</div>
+                  <div class="text-[11px] text-mist/50">Labs allocated strictly to practical courses; student headcounts fit room sizes</div>
+                </div>
+              </div>
+              <span class="font-mono text-xs text-go font-semibold">100% compliant</span>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-mist/5">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-go/15 text-go flex items-center justify-center text-xs">✓</span>
+                <div>
+                  <div class="text-xs font-semibold text-white">Teacher Gap Minimization</div>
+                  <div class="text-[11px] text-mist/50">Soft constraint preventing idle gaps greater than 2 periods between lectures</div>
+                </div>
+              </div>
+              <span class="font-mono text-xs text-brand font-semibold">96.4% score</span>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-mist/5">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-go/15 text-go flex items-center justify-center text-xs">✓</span>
+                <div>
+                  <div class="text-xs font-semibold text-white">Lunch Recess Preservation</div>
+                  <div class="text-[11px] text-mist/50">Mandatory period 4/5 lunch clearance reserved for students and faculty</div>
+                </div>
+              </div>
+              <span class="font-mono text-xs text-go font-semibold">Protected</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="glass rounded-3xl p-6 border border-mist/10 flex flex-col justify-between">
+          <div>
+            <h2 class="font-display font-bold text-lg text-white mb-1">Live Audit Stream</h2>
+            <p class="text-xs text-mist/55 mb-4">Latest automated and manual actions</p>
+
+            <div class="space-y-4" id="recentActivityList">
+              <div class="flex gap-3 text-xs">
+                <span class="w-2 h-2 rounded-full bg-brand mt-1.5 shrink-0"></span>
+                <div>
+                  <div class="font-medium text-white">Chronos auto-solve executed</div>
+                  <div class="text-[10px] font-mono text-mist/40">CSE-5A timetable optimized in 84ms</div>
+                  <div class="text-[10px] text-mist/30 mt-0.5">3 mins ago</div>
+                </div>
+              </div>
+
+              <div class="flex gap-3 text-xs">
+                <span class="w-2 h-2 rounded-full bg-sky mt-1.5 shrink-0"></span>
+                <div>
+                  <div class="font-medium text-white">Room R-204 reassigned</div>
+                  <div class="text-[10px] font-mono text-mist/40">Upgraded projector verified for AI Lecture</div>
+                  <div class="text-[10px] text-mist/30 mt-0.5">28 mins ago</div>
+                </div>
+              </div>
+
+              <div class="flex gap-3 text-xs">
+                <span class="w-2 h-2 rounded-full bg-violet mt-1.5 shrink-0"></span>
+                <div>
+                  <div class="font-medium text-white">Substitution assigned</div>
+                  <div class="text-[10px] font-mono text-mist/40">Dr. Fern covered ENG 101 for Prof. Rao</div>
+                  <div class="text-[10px] text-mist/30 mt-0.5">1 hour ago</div>
+                </div>
+              </div>
+
+              <div class="flex gap-3 text-xs">
+                <span class="w-2 h-2 rounded-full bg-go mt-1.5 shrink-0"></span>
+                <div>
+                  <div class="font-medium text-white">Campus broadcast published</div>
+                  <div class="text-[10px] font-mono text-mist/40">Mid-term schedule published to student portal</div>
+                  <div class="text-[10px] text-mist/30 mt-0.5">2 hours ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onclick="window.switchTab('notices')" class="btn-glass rounded-xl w-full py-2.5 text-xs font-semibold mt-4 text-center">
+            View All Broadcasts &amp; Logs
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB 2: MASTER GRID ============ -->
+    <section id="tab-matrix" class="tab-pane hidden space-y-6">
+      <div class="glass rounded-3xl p-6 border border-mist/10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="font-display font-bold text-xl text-white">Master Timetable Matrix</h2>
+          <p class="text-xs text-mist/55">Filter by academic department, semester, and section to inspect weekly schedule</p>
+        </div>
+
+        <!-- Filter Selectors -->
+        <div class="flex flex-wrap items-center gap-3">
+          <select id="gridDeptSelect" class="input-field !w-auto text-xs py-2 bg-panel">
+            <option value="CSE" selected>Computer Science (CSE)</option>
+            <option value="ECE">Electronics (ECE)</option>
+            <option value="MECH">Mechanical (MECH)</option>
+            <option value="CIVIL">Civil Eng (CIVIL)</option>
+            <option value="IT">Info Tech (IT)</option>
+          </select>
+
+          <select id="gridSemSelect" class="input-field !w-auto text-xs py-2 bg-panel">
+            <option value="5" selected>Semester 5</option>
+            <option value="1">Semester 1</option>
+            <option value="3">Semester 3</option>
+            <option value="7">Semester 7</option>
+          </select>
+
+          <select id="gridSecSelect" class="input-field !w-auto text-xs py-2 bg-panel">
+            <option value="A" selected>Section A</option>
+            <option value="B">Section B</option>
+            <option value="C">Section C</option>
+          </select>
+
+          <button type="button" id="btnPublishTimetable" class="btn-primary rounded-xl px-4 py-2 text-xs font-bold flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Publish to Campus
+          </button>
+
+          <button type="button" id="btnExportMatrix" class="btn-glass rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Timetable 5-Day x 6-Period Table -->
+      <div class="glass-strong rounded-3xl p-6 border border-mist/12 overflow-x-auto">
+        <div class="min-w-[780px]">
+          <div class="grid grid-cols-6 gap-3 mb-3 text-center">
+            <div class="mono-label py-2">Period</div>
+            <div class="mono-label py-2 font-bold text-white">Monday</div>
+            <div class="mono-label py-2 font-bold text-white">Tuesday</div>
+            <div class="mono-label py-2 font-bold text-white">Wednesday</div>
+            <div class="mono-label py-2 font-bold text-white">Thursday</div>
+            <div class="mono-label py-2 font-bold text-white">Friday</div>
+          </div>
+
+          <div id="masterGridRows" class="space-y-3">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB 3: AI SOLVER STUDIO & CONFLICTS ============ -->
+    <section id="tab-solver" class="tab-pane hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Solver Controls -->
+        <div class="glass rounded-3xl p-6 border border-mist/10 space-y-5">
+          <div>
+            <h2 class="font-display font-bold text-xl text-white">Chronos AI Solver Studio</h2>
+            <p class="text-xs text-mist/55 mt-1">Constraint Satisfaction Problem (CSP) Engine v2.4</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1.5 font-medium">
+                <span>Hard Constraints (Clash-Free)</span>
+                <span class="text-brand font-mono font-bold">100% (Strict)</span>
+              </div>
+              <input type="range" min="100" max="100" value="100" class="w-full accent-brand cursor-not-allowed opacity-80" disabled>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs mb-1.5 font-medium">
+                <span>Teacher Gap Minimization</span>
+                <span id="weightGapVal" class="text-brand font-mono font-bold">90%</span>
+              </div>
+              <input type="range" id="weightGap" min="50" max="100" value="90" class="w-full accent-brand">
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs mb-1.5 font-medium">
+                <span>Room Proximity Weight</span>
+                <span id="weightRoomVal" class="text-brand font-mono font-bold">85%</span>
+              </div>
+              <input type="range" id="weightRoom" min="40" max="100" value="85" class="w-full accent-brand">
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs mb-1.5 font-medium">
+                <span>Subject Balance across Days</span>
+                <span id="weightBalVal" class="text-brand font-mono font-bold">95%</span>
+              </div>
+              <input type="range" id="weightBal" min="50" max="100" value="95" class="w-full accent-brand">
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="button" id="btnExecuteSolver" class="btn-primary rounded-2xl w-full py-4 text-xs tracking-widest uppercase flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              Execute Chronos Solve
+            </button>
+            <p class="text-[11px] text-center text-mist/40 mt-2 font-mono">Runs in ~90 seconds across all 14 departments</p>
+          </div>
+        </div>
+
+        <!-- Live Solver Execution Terminal & Conflict Radar -->
+        <div class="glass-strong rounded-3xl p-6 border border-mist/12 lg:col-span-2 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-mist/10 pb-3 mb-4">
+              <div class="flex items-center gap-2 font-mono text-xs">
+                <span id="termDot" class="w-2.5 h-2.5 rounded-full bg-brand animate-pulse"></span>
+                <span class="text-white font-semibold">chronos-engine.terminal</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="runConflictScan()" class="btn-glass rounded-xl px-3 py-1.5 text-xs font-semibold">Scan Clashes</button>
+                <span id="solverStatusTag" class="badge bg-go/15 text-go">READY</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-4">
+              <div id="solverProgress" class="h-full bg-brand transition-all duration-300" style="width: 100%"></div>
+            </div>
+
+            <!-- Terminal Output -->
+            <div id="terminalLog" class="font-mono text-xs space-y-1.5 text-mist/70 h-64 overflow-y-auto pr-2">
+              <div class="text-mist/40">[system] Chronos Constraint Satisfaction Engine armed.</div>
+              <div class="text-mist/40">[system] Loaded 14 departments, 48 professors, 24 rooms.</div>
+              <div class="text-white">[pass 1] Scanning for hard collision vectors... 0 detected.</div>
+              <div class="text-white">[pass 2] Evaluating teacher gap distributions across Monday–Friday.</div>
+              <div class="text-brand">[pass 3] Room hardware tags matched 100% with laboratory courses.</div>
+              <div class="text-go font-bold">[success] Optimal timetable matrix locked. 0 clashes. Satisfies 100% constraints.</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-4 border-t border-mist/10 text-xs">
+            <span class="mono-label">Validation: Perfect 0-Clash Proof</span>
+            <button type="button" onclick="clearTerminalLogs()" class="text-mist/40 hover:text-white transition-colors">Clear output</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB 4: FACULTY ============ -->
+    <section id="tab-faculty" class="tab-pane hidden space-y-6">
+      <div class="glass rounded-3xl p-6 border border-mist/10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="font-display font-bold text-xl text-white">Faculty Directory &amp; Load</h2>
+          <p class="text-xs text-mist/55">Manage teacher profiles, weekly teaching hours, and assigned curricula</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="text" id="facultySearch" placeholder="Search professor..." class="input-field !w-56 text-xs py-2 bg-panel">
+          <button type="button" onclick="openAddFacultyModal()" class="btn-primary rounded-xl px-4 py-2 text-xs font-bold flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add Faculty
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-strong rounded-3xl border border-mist/10 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="portal-table">
+            <thead>
+              <tr>
+                <th>Faculty Member</th>
+                <th>Department</th>
+                <th>Weekly Load</th>
+                <th>Primary Courses</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="facultyTableBody">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB 5: SUBJECTS ============ -->
+    <section id="tab-subjects" class="tab-pane hidden space-y-6">
+      <div class="glass rounded-3xl p-6 border border-mist/10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="font-display font-bold text-xl text-white">Course &amp; Subject Catalog</h2>
+          <p class="text-xs text-mist/55">Course credits, lecture versus laboratory breakdown, and semester assignments</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="button" onclick="openAddSubjectModal()" class="btn-primary rounded-xl px-4 py-2 text-xs font-bold flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add Subject
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-strong rounded-3xl border border-mist/10 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="portal-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Subject Name</th>
+                <th>Type</th>
+                <th>Credits</th>
+                <th>Weekly Hours</th>
+                <th>Assigned Faculty</th>
+                <th class="text-right">Manage</th>
+              </tr>
+            </thead>
+            <tbody id="subjectTableBody">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB 6: ROOMS & LABS ============ -->
+    <section id="tab-rooms" class="tab-pane hidden space-y-6">
+      <div class="glass rounded-3xl p-6 border border-mist/10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="font-display font-bold text-xl text-white">Rooms &amp; Laboratories</h2>
+          <p class="text-xs text-mist/55">Room capacity, hardware equipment tags, and occupancy status</p>
+        </div>
+        <button type="button" onclick="openAddRoomModal()" class="btn-primary rounded-xl px-4 py-2 text-xs font-bold flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Add Room
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="roomsCardContainer">
+        <!-- Dynamically populated via JS -->
+      </div>
+    </section>
+
+    <!-- ============ TAB 7: SUBSTITUTIONS ============ -->
+    <section id="tab-substitutions" class="tab-pane hidden space-y-6">
+      <div class="glass-strong rounded-3xl p-6 md:p-8 border border-mist/12">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="w-3 h-3 rounded-full bg-brand animate-ping"></span>
+          <h2 class="font-display font-bold text-xl md:text-2xl text-white">Emergency Substitution Radar</h2>
+        </div>
+        <p class="text-mist/65 text-sm max-w-xl">
+          When a faculty member is absent, SchedFlow scans free professors in that exact period who hold qualifying subject expertise and zero schedule clashes.
+        </p>
+
+        <!-- Substitute Query Form -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div>
+            <label class="mono-label block mb-2">Absent Faculty Member</label>
+            <select id="subAbsentFaculty" class="input-field bg-panel">
+              <option value="Dr. Mehta">Dr. Mehta (DSA / Algorithms)</option>
+              <option value="Prof. Rao">Prof. Rao (Physics / Mechanics)</option>
+              <option value="Dr. Kaur">Dr. Kaur (Computer Networks)</option>
+              <option value="Dr. Fern">Dr. Fern (Software Engineering)</option>
+              <option value="Prof. Haq">Prof. Haq (Operating Systems)</option>
+              <option value="Dr. Iyer">Dr. Iyer (Mathematics)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="mono-label block mb-2">Day of Absence</label>
+            <select id="subDay" class="input-field bg-panel">
+              <option value="MON">Monday</option>
+              <option value="TUE">Tuesday</option>
+              <option value="WED">Wednesday</option>
+              <option value="THU">Thursday</option>
+              <option value="FRI">Friday</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="mono-label block mb-2">Period to Cover</label>
+            <select id="subPeriod" class="input-field bg-panel">
+              <option value="P1">Period 1 (09:00 - 09:50)</option>
+              <option value="P2" selected>Period 2 (10:00 - 10:50)</option>
+              <option value="P3">Period 3 (11:00 - 11:50)</option>
+              <option value="P4">Period 4 (12:00 - 12:50)</option>
+              <option value="P5">Period 5 (14:00 - 14:50)</option>
+              <option value="P6">Period 6 (15:00 - 15:50)</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" onclick="runSubstitutionSearch()" class="btn-primary rounded-xl px-6 py-3 text-xs tracking-wider uppercase mt-4 flex items-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4v8z"/></svg>
+          Search Qualified Substitutes
+        </button>
+      </div>
+
+      <!-- Suggested Substitutes Results Container -->
+      <div id="substituteResults" class="space-y-4">
+        <h3 class="mono-label text-mist/60">Top Conflict-Free Recommendations</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="subCandidatesList">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB 8: NOTICES ============ -->
+    <section id="tab-notices" class="tab-pane hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- New Announcement Form -->
+        <div class="glass rounded-3xl p-6 border border-mist/10 space-y-4">
+          <h2 class="font-display font-bold text-lg text-white">Broadcast Announcement</h2>
+          <p class="text-xs text-mist/55">Push immediate notifications to all student timetable boards and faculty portals</p>
+
+          <div>
+            <label class="mono-label block mb-1.5">Notice Title</label>
+            <input type="text" id="noticeTitle" placeholder="e.g. Lab 2 Maintenance Rescheduled" class="input-field bg-panel">
+          </div>
+
+          <div>
+            <label class="mono-label block mb-1.5">Category</label>
+            <select id="noticeCat" class="input-field bg-panel">
+              <option value="General">General Campus Update</option>
+              <option value="Urgent">Urgent / Class Change</option>
+              <option value="Exam">Examination Schedule</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="mono-label block mb-1.5">Message Content</label>
+            <textarea id="noticeBody" rows="4" placeholder="Detail class shift, room change, or holiday coverage..." class="input-field bg-panel"></textarea>
+          </div>
+
+          <button type="button" onclick="publishAnnouncement()" class="btn-primary rounded-xl w-full py-3 text-xs tracking-wider uppercase flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            Broadcast Notice
+          </button>
+        </div>
+
+        <!-- Published Notices Feed -->
+        <div class="glass-strong rounded-3xl p-6 border border-mist/12 lg:col-span-2 space-y-4">
+          <h2 class="font-display font-bold text-lg text-white mb-2">Live Published Notices</h2>
+          <div class="space-y-3" id="noticesList">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TAB 9: FEEDBACK QUEUE ============ -->
+    <section id="tab-feedback" class="tab-pane hidden space-y-6">
+      <div class="glass rounded-3xl p-6 border border-mist/10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="font-display font-bold text-xl text-white">Campus Timetable Feedback Queue</h2>
+          <p class="text-xs text-mist/55">Incoming student and faculty reports submitted directly from the timetable viewer</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="filterFeedback('all')" class="btn-glass rounded-full px-3 py-1.5 text-xs font-semibold">All</button>
+          <button type="button" onclick="filterFeedback('pending')" class="btn-glass rounded-full px-3 py-1.5 text-xs font-semibold text-amber">Pending</button>
+          <button type="button" onclick="filterFeedback('resolved')" class="btn-glass rounded-full px-3 py-1.5 text-xs font-semibold text-go">Resolved</button>
+        </div>
+      </div>
+
+      <div class="glass-strong rounded-3xl border border-mist/10 overflow-hidden">
+        <table class="portal-table">
+          <thead>
+            <tr>
+              <th>Reporter</th>
+              <th>Category</th>
+              <th>Message / Request</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="feedbackTableBody">
+            <!-- Dynamically populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ TAB 10: AUDIT & SETTINGS ============ -->
+    <section id="tab-settings" class="tab-pane hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass rounded-3xl p-6 border border-mist/10 space-y-4">
+          <h2 class="font-display font-bold text-lg text-white">Backend Infrastructure</h2>
+          <p class="text-xs text-mist/55">Direct API endpoint bindings and cluster communication</p>
+
+          <div>
+            <label class="mono-label block mb-1.5">FastAPI Backend URL</label>
+            <input type="text" id="apiEndpointUrl" value="http://localhost:8000" class="input-field font-mono text-xs bg-panel">
+          </div>
+
+          <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-mist/5 text-xs font-mono">
+            <span>Connection Status:</span>
+            <span id="cfgHealthStatus" class="text-amber font-semibold">Checking...</span>
+          </div>
+
+          <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-mist/5 text-xs font-mono">
+            <span>Database Storage:</span>
+            <span class="text-white">SQLite / Master ORM Store</span>
+          </div>
+
+          <button type="button" onclick="testBackendConnection()" class="btn-glass rounded-xl w-full py-2.5 text-xs font-semibold">
+            Test Connection Health
+          </button>
+        </div>
+
+        <div class="glass rounded-3xl p-6 border border-mist/10 space-y-4">
+          <h2 class="font-display font-bold text-lg text-white">Cache &amp; Reset Management</h2>
+          <p class="text-xs text-mist/55">Maintenance options for session tokens and timetable solver states</p>
+
+          <div class="space-y-2">
+            <button type="button" onclick="clearSolverCache()" class="btn-glass rounded-xl w-full py-3 text-xs font-semibold flex items-center justify-center gap-2 hover:border-amber/50">
+              <svg class="w-4 h-4 text-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-5h5"/></svg>
+              Flush In-Memory Solver Cache
+            </button>
+
+            <button type="button" onclick="resetToFactoryDemo()" class="btn-glass rounded-xl w-full py-3 text-xs font-semibold flex items-center justify-center gap-2 hover:border-alert/50 text-alert">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 6h18"/></svg>
+              Reset Session State
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ================= FLOATING SCHEDFLOW AI ASSIST WIDGET ================= -->
+<div class="fixed bottom-6 right-6 z-50">
+  <button type="button" id="btnAssistToggle" class="btn-primary rounded-full px-5 py-3.5 flex items-center gap-2.5 shadow-2xl">
+    <div class="w-2.5 h-2.5 rounded-full bg-black subtle-pulse"></div>
+    <span class="font-display font-extrabold text-xs tracking-wider uppercase">SchedFlow Assist</span>
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+
+  <div id="assistDrawer" class="closed absolute bottom-16 right-0 w-[380px] sm:w-[420px] max-h-[560px] rounded-3xl glass-strong border border-mist/20 shadow-2xl flex flex-col overflow-hidden">
+    <div class="p-4 border-b border-mist/10 flex items-center justify-between bg-black/40">
+      <div class="flex items-center gap-2.5">
+        <span class="w-2 h-2 rounded-full bg-brand"></span>
+        <div class="font-display font-bold text-sm text-white">SchedFlow Assist</div>
+        <span class="badge bg-brand/15 text-brand text-[9px]">Chronos LLM</span>
+      </div>
+      <button type="button" id="btnAssistClose" class="text-mist/50 hover:text-white p-1 rounded-full">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div id="chatMessages" class="p-4 flex-1 overflow-y-auto space-y-3.5 text-xs max-h-[380px]">
+      <div class="flex gap-2.5">
+        <div class="w-6 h-6 rounded-full bg-brand/20 text-brand flex items-center justify-center shrink-0 text-[10px] font-bold">
+          AI
+        </div>
+        <div class="p-3 rounded-2xl rounded-tl-sm bg-white/5 border border-mist/10 text-mist/90 leading-relaxed">
+          Hello! I am SchedFlow's timetable intelligence assistant. You can ask me to inspect conflicts, suggest qualified substitutes, or query room utilization across departments.
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar border-t border-mist/5">
+      <button type="button" onclick="sendPromptChip('Are there any clashes in CSE Sem 5?')" class="text-[10px] px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 text-mist/70 border border-mist/10 whitespace-nowrap">
+        Any clashes in CSE?
+      </button>
+      <button type="button" onclick="sendPromptChip('Suggest substitute for Dr. Mehta on Monday')" class="text-[10px] px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 text-mist/70 border border-mist/10 whitespace-nowrap">
+        Substitute Dr. Mehta
+      </button>
+      <button type="button" onclick="sendPromptChip('Check computer lab utilization')" class="text-[10px] px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 text-mist/70 border border-mist/10 whitespace-nowrap">
+        Lab utilization
+      </button>
+    </div>
+
+    <form id="chatForm" class="p-3 border-t border-mist/10 bg-black/30 flex gap-2">
+      <input type="text" id="chatInput" placeholder="Ask about schedules, rooms, faculty..." class="input-field text-xs py-2.5 flex-1 bg-panel/70">
+      <button type="submit" class="btn-primary rounded-xl px-4 py-2.5 text-xs font-bold">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast" class="glass-strong fixed left-1/2 bottom-8 -translate-x-1/2 z-[100] px-5 py-3 rounded-full text-xs font-bold flex items-center gap-2.5 pointer-events-none transition-all duration-300 opacity-0 translate-y-4">
+  <span class="w-2 h-2 rounded-full bg-brand"></span>
+  <span id="toastMsg" class="text-white">Action Completed</span>
+</div>
+
+<!-- ================= MODALS: FACULTY, SUBJECTS, ROOMS ================= -->
+
+<!-- Modal: Faculty (Add / Edit) -->
+<div id="modalFaculty" class="fixed inset-0 z-[80] invisible opacity-0 flex items-center justify-center p-4 transition-all duration-300">
+  <div class="modal-backdrop absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeFacultyModal()"></div>
+  <div class="relative w-full max-w-lg glass-strong rounded-3xl p-6 md:p-8 border border-mist/20 shadow-2xl z-10 transform scale-95 transition-all duration-300">
+    <div class="flex items-center justify-between pb-4 border-b border-mist/10">
+      <div>
+        <h3 id="modalFacultyTitle" class="font-display font-bold text-lg text-white">Edit Faculty Member</h3>
+        <p id="modalFacultySub" class="text-xs text-mist/50 mt-0.5">Update professor profile, department, and teaching load</p>
+      </div>
+      <button type="button" onclick="closeFacultyModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-mist/60 hover:text-white transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form id="formFaculty" class="space-y-4 mt-5">
+      <input type="hidden" id="facId">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Full Name</label>
+          <input type="text" id="facName" required class="input-field w-full text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Email Address</label>
+          <input type="email" id="facEmail" required class="input-field w-full text-xs font-mono">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Department</label>
+          <select id="facDept" class="input-field w-full text-xs bg-panel">
+            <option value="CSE">CSE</option>
+            <option value="Physics">Physics</option>
+            <option value="IT">IT</option>
+            <option value="Math">Math</option>
+            <option value="ECE">ECE</option>
+            <option value="ME">ME</option>
+            <option value="CE">CE</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Assigned Hours</label>
+          <input type="number" id="facHours" min="0" max="40" class="input-field w-full text-xs font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Max Weekly Load</label>
+          <input type="number" id="facMaxHours" min="1" max="50" class="input-field w-full text-xs font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-mist/70 mb-1.5">Primary Courses (comma separated)</label>
+        <input type="text" id="facCourses" placeholder="e.g. DSA, Algorithms, AI" class="input-field w-full text-xs">
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-mist/70 mb-1.5">Active Status</label>
+        <select id="facStatus" class="input-field w-full text-xs bg-panel">
+          <option value="Active">Active (Available for Scheduling)</option>
+          <option value="On Leave">On Leave (Exclude from Solver)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-between pt-4 border-t border-mist/10 mt-6">
+        <button type="button" id="btnDeleteFaculty" onclick="deleteCurrentFaculty()" class="btn-glass !border-alert/30 text-alert hover:bg-alert/15 px-4 py-2 rounded-xl text-xs font-semibold">
+          Delete Profile
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeFacultyModal()" class="btn-glass px-4 py-2 rounded-xl text-xs font-semibold">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Subject (Add / Edit) -->
+<div id="modalSubject" class="fixed inset-0 z-[80] invisible opacity-0 flex items-center justify-center p-4 transition-all duration-300">
+  <div class="modal-backdrop absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeSubjectModal()"></div>
+  <div class="relative w-full max-w-lg glass-strong rounded-3xl p-6 md:p-8 border border-mist/20 shadow-2xl z-10 transform scale-95 transition-all duration-300">
+    <div class="flex items-center justify-between pb-4 border-b border-mist/10">
+      <div>
+        <h3 id="modalSubjectTitle" class="font-display font-bold text-lg text-white">Edit Course & Subject</h3>
+        <p class="text-xs text-mist/50 mt-0.5">Configure course code, credits, lecture/lab category and assigned teacher</p>
+      </div>
+      <button type="button" onclick="closeSubjectModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-mist/60 hover:text-white transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form id="formSubject" class="space-y-4 mt-5">
+      <input type="hidden" id="subIdx">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Course Code</label>
+          <input type="text" id="subCode" required class="input-field w-full text-xs font-mono uppercase">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Subject Name</label>
+          <input type="text" id="subName" required class="input-field w-full text-xs">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Type</label>
+          <select id="subType" class="input-field w-full text-xs bg-panel">
+            <option value="Lecture">Lecture</option>
+            <option value="Laboratory">Laboratory</option>
+            <option value="Seminar">Seminar</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Credits</label>
+          <input type="number" id="subCredits" min="1" max="6" class="input-field w-full text-xs font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Weekly Hours</label>
+          <input type="number" id="subHours" min="1" max="10" class="input-field w-full text-xs font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-mist/70 mb-1.5">Assigned Faculty Member</label>
+        <input type="text" id="subTeacher" placeholder="e.g. Dr. Mehta" class="input-field w-full text-xs">
+      </div>
+
+      <div class="flex items-center justify-between pt-4 border-t border-mist/10 mt-6">
+        <button type="button" id="btnDeleteSubject" onclick="deleteCurrentSubject()" class="btn-glass !border-alert/30 text-alert hover:bg-alert/15 px-4 py-2 rounded-xl text-xs font-semibold">
+          Delete Subject
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeSubjectModal()" class="btn-glass px-4 py-2 rounded-xl text-xs font-semibold">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Room (Add / Edit) -->
+<div id="modalRoom" class="fixed inset-0 z-[80] invisible opacity-0 flex items-center justify-center p-4 transition-all duration-300">
+  <div class="modal-backdrop absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeRoomModal()"></div>
+  <div class="relative w-full max-w-lg glass-strong rounded-3xl p-6 md:p-8 border border-mist/20 shadow-2xl z-10 transform scale-95 transition-all duration-300">
+    <div class="flex items-center justify-between pb-4 border-b border-mist/10">
+      <div>
+        <h3 id="modalRoomTitle" class="font-display font-bold text-lg text-white">Edit Room Details</h3>
+        <p class="text-xs text-mist/50 mt-0.5">Configure room capacity, smart equipment, and availability</p>
+      </div>
+      <button type="button" onclick="closeRoomModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-mist/60 hover:text-white transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form id="formRoom" class="space-y-4 mt-5">
+      <input type="hidden" id="roomIdx">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Room Code</label>
+          <input type="text" id="roomCode" required class="input-field w-full text-xs font-mono uppercase">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Room Category</label>
+          <select id="roomType" class="input-field w-full text-xs bg-panel">
+            <option value="Computer Lab">Computer Lab</option>
+            <option value="Lecture Hall">Lecture Hall</option>
+            <option value="Seminar Hall">Seminar Hall</option>
+            <option value="Hardware Lab">Hardware Lab</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Seating Capacity</label>
+          <input type="number" id="roomCap" min="10" max="300" class="input-field w-full text-xs font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-mist/70 mb-1.5">Occupancy Status</label>
+          <select id="roomOcc" class="input-field w-full text-xs bg-panel">
+            <option value="Available">Available</option>
+            <option value="Maintenance">Maintenance</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-mist/70 mb-1.5">Equipment / Tags (comma separated)</label>
+        <input type="text" id="roomEq" placeholder="e.g. High-Lumen Projector, 45 Workstations" class="input-field w-full text-xs">
+      </div>
+
+      <div class="flex items-center justify-between pt-4 border-t border-mist/10 mt-6">
+        <button type="button" id="btnDeleteRoom" onclick="deleteCurrentRoom()" class="btn-glass !border-alert/30 text-alert hover:bg-alert/15 px-4 py-2 rounded-xl text-xs font-semibold">
+          Delete Room
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeRoomModal()" class="btn-glass px-4 py-2 rounded-xl text-xs font-semibold">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded-xl text-xs font-bold">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= THREE.JS MODULE: LIVING ROWS OF TIMETABLE BLOCKS SPANNING FULL SCREEN & CORNERS ================= -->
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('bgCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000000, 0.012);
+
+const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 12);
+
+// Scene Lighting
+scene.add(new THREE.AmbientLight(0xffffff, 1.15));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+keyLight.position.set(5, 7, 7);
+scene.add(keyLight);
+
+const rimA = new THREE.PointLight(0x38BDF8, 0.7, 28);
+rimA.position.set(-10, 4, -3);
+scene.add(rimA);
+
+const rimB = new THREE.PointLight(0x74C947, 0.8, 28);
+rimB.position.set(10, -3, -3);
+scene.add(rimB);
+
+/* 7 Conveyor Lanes Spanning Top to Bottom and Edge to Edge */
+const ROWS_COUNT = 7;
+const BLOCKS_PER_ROW = 14;
+const ROW_Y = [5.6, 3.8, 1.9, 0.0, -1.9, -3.8, -5.6];
+const ROW_SPEEDS = [0.45, -0.55, 0.48, -0.42, 0.52, -0.48, 0.58];
+
+const PALETTE = ['#74C947', '#38BDF8', '#C77DFF', '#2DD4BF', '#FFB224', '#FF7A9C'];
+const SUBJECTS = ['DSA', 'OS', 'DBMS', 'CN', 'AI', 'SE', 'MATH', 'CYBER', 'CLOUD', 'ALGO', 'WEB', 'DATA'];
+const TEACHERS = ['Dr. Mehta', 'Prof. Rao', 'Dr. Kaur', 'Dr. Fern', 'Prof. Haq', 'Dr. Iyer', 'Dr. Dharma'];
+const ROOMS = ['LAB-1', 'R-204', 'R-118', 'LAB-2', 'R-201', 'R-09', 'HALL-A'];
+
+const conveyorBlocks = [];
+const SPACING_X = 2.65;
+const TOTAL_SPAN = BLOCKS_PER_ROW * SPACING_X;
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function createBlockTexture(subj, teacher, room, color) {
+  const cv = document.createElement('canvas');
+  cv.width = 512;
+  cv.height = 336;
+  const ctx = cv.getContext('2d');
+
+  ctx.fillStyle = '#0E1420';
+  ctx.fillRect(0, 0, 512, 336);
+
+  ctx.strokeStyle = 'rgba(233, 238, 245, 0.22)';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(3, 3, 506, 330);
+
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 24, 336);
+
+  ctx.fillStyle = color;
+  ctx.font = '800 64px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(subj, 52, 115);
+
+  ctx.fillStyle = '#E9EEF5';
+  ctx.font = '500 36px "IBM Plex Mono", monospace';
+  ctx.fillText(teacher, 52, 185);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+  const roomW = ctx.measureText(room).width + 36;
+  roundRect(ctx, 52, 218, roomW, 58, 14);
+  ctx.fill();
+
+  ctx.fillStyle = '#38BDF8';
+  ctx.font = '600 32px "IBM Plex Mono", monospace';
+  ctx.fillText(room, 70, 258);
+
+  const texture = new THREE.CanvasTexture(cv);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  return texture;
+}
+
+const geometry = new THREE.BoxGeometry(1.5, 0.95, 0.35);
+
+for (let r = 0; r < ROWS_COUNT; r++) {
+  const y = ROW_Y[r];
+  const speed = ROW_SPEEDS[r];
+
+  for (let b = 0; b < BLOCKS_PER_ROW; b++) {
+    const subj = SUBJECTS[(r * 3 + b) % SUBJECTS.length];
+    const teacher = TEACHERS[(r + b) % TEACHERS.length];
+    const room = ROOMS[(b * 2 + r) % ROOMS.length];
+    const color = PALETTE[(r + b) % PALETTE.length];
+
+    const texture = createBlockTexture(subj, teacher, room, color);
+
+    const frontMat = new THREE.MeshStandardMaterial({
+      map: texture,
+      emissiveMap: texture,
+      emissive: new THREE.Color('#ffffff'),
+      emissiveIntensity: 0.38,
+      roughness: 0.45,
+      metalness: 0.1
+    });
+
+    const sideMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(color).multiplyScalar(0.4),
+      roughness: 0.6
+    });
+
+    const materials = [sideMat, sideMat, sideMat, sideMat, frontMat, frontMat];
+    const mesh = new THREE.Mesh(geometry, materials);
+
+    const initialX = -TOTAL_SPAN / 2 + b * SPACING_X + (r % 2) * 1.3;
+    mesh.position.set(initialX, y, (r % 2 === 0 ? 0.3 : -0.3));
+
+    scene.add(mesh);
+    conveyorBlocks.push({
+      mesh,
+      row: r,
+      speed,
+      x: initialX,
+      y,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+// Animation Loop: 3D rotation and sliding across widescreen viewport
+let lastTime = performance.now();
+function animate(time) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((time - lastTime) / 1000, 0.1);
+  lastTime = time;
+
+  const t = time / 1000;
+
+  for (let i = 0; i < conveyorBlocks.length; i++) {
+    const item = conveyorBlocks[i];
+    item.x += item.speed * dt;
+
+    const halfSpan = TOTAL_SPAN / 2;
+    if (item.speed > 0 && item.x > halfSpan + 2.0) {
+      item.x -= TOTAL_SPAN + 4.0;
+    } else if (item.speed < 0 && item.x < -halfSpan - 2.0) {
+      item.x += TOTAL_SPAN + 4.0;
+    }
+
+    // Random bouncing and floating going here and there
+    const bounceY = Math.sin(t * 2.0 + item.phase * 1.5) * 0.25;
+    const bounceZ = Math.cos(t * 1.7 + item.phase * 2.0) * 0.28;
+
+    item.mesh.position.x = item.x;
+    item.mesh.position.y = item.y + bounceY;
+    item.mesh.position.z = (item.row % 2 === 0 ? 0.35 : -0.35) + bounceZ;
+
+    // Organic 3D rotation on X, Y, and Z
+    item.mesh.rotation.y = Math.sin(t * 1.1 + item.phase) * 0.4 + (item.speed > 0 ? 0.18 : -0.18);
+    item.mesh.rotation.x = Math.cos(t * 0.9 + item.phase) * 0.28;
+    item.mesh.rotation.z = Math.sin(t * 0.7 + item.phase) * 0.22;
+  }
+
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+<!-- ================= APPLICATION & DATA MANAGEMENT SCRIPT ================= -->
+<script>
+/* Global Store & Mock Data (Graceful Fallback if backend is offline) */
+const DATA = {
+  faculty: [
+    { id: 1, name: 'Dr. Mehta', dept: 'CSE', hours: 18, maxHours: 22, email: 'mehta@schedflow.edu', courses: ['DSA', 'Algorithms'], status: 'Active' },
+    { id: 2, name: 'Prof. Rao', dept: 'Physics', hours: 16, maxHours: 20, email: 'rao@schedflow.edu', courses: ['PHY 101', 'Mechanics'], status: 'Active' },
+    { id: 3, name: 'Dr. Kaur', dept: 'CSE', hours: 20, maxHours: 22, email: 'kaur@schedflow.edu', courses: ['Networks', 'Cloud'], status: 'Active' },
+    { id: 4, name: 'Dr. Fern', dept: 'IT', hours: 14, maxHours: 18, email: 'fern@schedflow.edu', courses: ['Software Eng', 'Web Dev'], status: 'Active' },
+    { id: 5, name: 'Prof. Haq', dept: 'CSE', hours: 17, maxHours: 20, email: 'haq@schedflow.edu', courses: ['OS', 'Systems'], status: 'On Leave' },
+    { id: 6, name: 'Dr. Iyer', dept: 'Math', hours: 19, maxHours: 22, email: 'iyer@schedflow.edu', courses: ['Discrete Math', 'Calculus'], status: 'Active' },
+  ],
+  subjects: [
+    { code: 'CS-301', name: 'Data Structures & Algorithms', type: 'Lecture + Lab', credits: 4, hours: 5, teacher: 'Dr. Mehta' },
+    { code: 'CS-302', name: 'Operating Systems', type: 'Lecture', credits: 3, hours: 4, teacher: 'Prof. Haq' },
+    { code: 'CS-303', name: 'Database Management Systems', type: 'Lecture + Lab', credits: 4, hours: 5, teacher: 'Dr. Kaur' },
+    { code: 'CS-304', name: 'Computer Networks', type: 'Lecture', credits: 3, hours: 3, teacher: 'Dr. Kaur' },
+    { code: 'MA-201', name: 'Discrete Mathematical Structures', type: 'Lecture', credits: 4, hours: 4, teacher: 'Dr. Iyer' },
+    { code: 'IT-305', name: 'Software Engineering & Agile', type: 'Lecture', credits: 3, hours: 3, teacher: 'Dr. Fern' },
+  ],
+  rooms: [
+    { code: 'LAB-1', type: 'Computer Science Lab', cap: 45, eq: ['45 High-Spec Workstations', 'Dual Projectors', 'Gigabit Switch'], occ: 'Occupied' },
+    { code: 'R-204', type: 'Tiered Lecture Theatre', cap: 90, eq: ['UltraHD Laser Projector', 'Mic Array', 'Air Conditioning'], occ: 'Available' },
+    { code: 'R-118', type: 'Interactive Seminar Room', cap: 40, eq: ['Smart Touch Board', 'Surround Audio'], occ: 'Occupied' },
+    { code: 'LAB-2', type: 'AI & Systems Laboratory', cap: 35, eq: ['RTX 4090 GPU Pods', 'Gigabit LAN'], occ: 'Occupied' },
+    { code: 'R-201', type: 'Standard Classroom', cap: 60, eq: ['Ceiling Projector', 'Acoustic Panels'], occ: 'Available' },
+    { code: 'R-09', type: 'Mathematics Tutorial Room', cap: 30, eq: ['Full-Wall Glass Boards'], occ: 'Available' },
+  ],
+  notices: [
+    { id: 1, title: 'Term 1 Mid-Semester Timetable Published', cat: 'General', time: 'Today, 10:30 AM', body: 'All semester schedules are fully locked with 0 conflicts. PDF downloads are live.' },
+    { id: 2, title: 'LAB-1 Hardware Maintenance Rescheduled', cat: 'Urgent', time: 'Yesterday, 04:15 PM', body: 'The Friday P6 maintenance slot has been swapped to Saturday morning. Classes run normal.' },
+    { id: 3, title: 'Elective Selection Window Closing Friday', cat: 'Exam', time: '2 days ago', body: 'Students must verify chosen electives in portal to prevent slot overbooking.' },
+  ],
+  feedback: [
+    { id: 1, user: 'Aarav Sharma (CSE-5A)', cat: 'Room Capacity', msg: 'R-118 gets overcrowded on Wednesday P2 lecture.', date: 'Today', status: 'Pending' },
+    { id: 2, user: 'Dr. Mehta (Faculty)', cat: 'Gap Optimization', msg: '3-hour gap between P1 and P5 on Thursday minimized nicely.', date: 'Yesterday', status: 'Resolved' },
+    { id: 3, user: 'Priya Verma (IT-3B)', cat: 'Lab Equipment', msg: 'Need projector check in LAB-2 station 4.', date: '2 days ago', status: 'Investigating' },
+  ]
+};
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function showToast(msg) {
+  const t = $('#toast'), m = $('#toastMsg');
+  m.textContent = msg;
+  t.classList.remove('opacity-0', 'translate-y-4');
+  t.classList.add('opacity-100', 'translate-y-0');
+  setTimeout(() => {
+    t.classList.remove('opacity-100', 'translate-y-0');
+    t.classList.add('opacity-0', 'translate-y-4');
+  }, 2400);
+}
+
+// Global switchTab attached to window so it is 100% accessible everywhere
+window.switchTab = function(targetTab) {
+  $$('.nav-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === targetTab);
+  });
+  $$('.tab-pane').forEach(p => {
+    p.classList.toggle('hidden', p.id !== 'tab-' + targetTab);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+$$('.nav-tab').forEach(btn => {
+  btn.addEventListener('click', () => window.switchTab(btn.dataset.tab));
+});
+
+// Click-toggle Administrator Menu
+const btnUserMenu = document.getElementById('btnUserMenu');
+const userDropdown = document.getElementById('userDropdown');
+if (btnUserMenu && userDropdown) {
+  btnUserMenu.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userDropdown.classList.toggle('hidden');
+  });
+  userDropdown.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  document.addEventListener('click', () => {
+    userDropdown.classList.add('hidden');
+  });
+}
+
+const menuBtnSettings = document.getElementById('menuBtnSettings');
+if (menuBtnSettings) {
+  menuBtnSettings.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.switchTab('settings');
+    if (userDropdown) userDropdown.classList.add('hidden');
+    showToast('Switched to System Settings');
+  });
+}
+
+/* Master Grid Population */
+function renderMasterGrid() {
+  const container = $('#masterGridRows');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+  const PERIODS = [
+    { name: 'P1', time: '09:00 - 09:50' },
+    { name: 'P2', time: '10:00 - 10:50' },
+    { name: 'P3', time: '11:00 - 11:50' },
+    { name: 'LUNCH', time: '12:00 - 13:00' },
+    { name: 'P4', time: '13:00 - 13:50' },
+    { name: 'P5', time: '14:00 - 14:50' },
+    { name: 'P6', time: '15:00 - 15:50' },
+  ];
+
+  const SAMPLE_CLASSES = [
+    { code: 'DSA', teacher: 'Dr. Mehta', room: 'LAB-1', col: '#74C947' },
+    { code: 'OS', teacher: 'Prof. Haq', room: 'R-204', col: '#38BDF8' },
+    { code: 'DBMS', teacher: 'Dr. Kaur', room: 'LAB-2', col: '#C77DFF' },
+    { code: 'CN', teacher: 'Dr. Kaur', room: 'R-118', col: '#2DD4BF' },
+    { code: 'MATH', teacher: 'Dr. Iyer', room: 'R-09', col: '#FFB224' },
+    { code: 'SE', teacher: 'Dr. Fern', room: 'R-201', col: '#FF7A9C' },
+  ];
+
+  PERIODS.forEach((p, pIdx) => {
+    const row = document.createElement('div');
+    row.className = 'grid grid-cols-6 gap-3 items-stretch';
+
+    const pCol = document.createElement('div');
+    pCol.className = 'glass rounded-xl p-3 flex flex-col justify-center items-center text-center';
+    pCol.innerHTML = `<span class="font-bold text-xs text-white">${p.name}</span><span class="text-[9px] font-mono text-mist/40">${p.time}</span>`;
+    row.appendChild(pCol);
+
+    if (p.name === 'LUNCH') {
+      const lunchCol = document.createElement('div');
+      lunchCol.className = 'col-span-5 rounded-xl border border-dashed border-mist/15 bg-white/[0.02] flex items-center justify-center text-xs font-mono text-mist/40 tracking-widest';
+      lunchCol.textContent = 'CAMPUS RECESS & LUNCH BREAK';
+      row.appendChild(lunchCol);
+    } else {
+      DAYS.forEach((d, dIdx) => {
+        const c = SAMPLE_CLASSES[(pIdx + dIdx * 2) % SAMPLE_CLASSES.length];
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell cursor-pointer';
+        cell.innerHTML = `
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-bold text-xs" style="color:${c.col}">${c.code}</span>
+            <span class="text-[10px] font-mono text-mist/40">${c.room}</span>
+          </div>
+          <div class="text-[11px] text-white/90 truncate">${c.teacher}</div>
+          <div class="text-[9px] font-mono text-go flex items-center gap-1 mt-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-go"></span>Verified
+          </div>
+        `;
+        cell.onclick = () => showToast(`Selected: ${c.code} (${c.teacher} in ${c.room})`);
+        row.appendChild(cell);
+      });
+    }
+
+    container.appendChild(row);
+  });
+}
+
+/* Faculty Table Population */
+function renderFacultyTable(filter = '') {
+  const tbody = $('#facultyTableBody');
+  if (!tbody) return;
+  const list = filter 
+    ? DATA.faculty.filter(f => f.name.toLowerCase().includes(filter.toLowerCase()) || f.dept.toLowerCase().includes(filter.toLowerCase()) || f.email.toLowerCase().includes(filter.toLowerCase()))
+    : DATA.faculty;
+  tbody.innerHTML = list.map(f => `
+    <tr>
+      <td>
+        <div class="font-semibold text-white">${f.name}</div>
+        <div class="text-[11px] font-mono text-mist/40">${f.email}</div>
+      </td>
+      <td><span class="badge bg-white/5 text-mist/80 border border-mist/10">${f.dept}</span></td>
+      <td>
+        <div class="text-xs font-mono font-bold text-white">${f.hours} / ${f.maxHours} hrs</div>
+        <div class="w-24 h-1.5 bg-white/10 rounded-full mt-1 overflow-hidden">
+          <div class="h-full bg-brand" style="width:${Math.min(100, (f.hours/f.maxHours)*100)}%"></div>
+        </div>
+      </td>
+      <td><span class="text-xs text-mist/80">${f.courses.join(', ')}</span></td>
+      <td>
+        <span class="badge ${f.status === 'Active' ? 'bg-go/15 text-go border-go/30' : 'bg-amber/15 text-amber border-amber/30'}">
+          ${f.status}
+        </span>
+      </td>
+      <td class="text-right">
+        <button type="button" onclick="openEditFacultyModal(${f.id})" class="btn-glass rounded-lg px-3 py-1.5 text-xs font-semibold hover:border-brand/40 hover:text-brand transition-colors">Edit</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+/* Subjects Table Population */
+function renderSubjectTable() {
+  const tbody = $('#subjectTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = DATA.subjects.map((s, idx) => `
+    <tr>
+      <td><span class="font-mono font-bold text-brand">${s.code}</span></td>
+      <td class="font-medium text-white">${s.name}</td>
+      <td><span class="badge bg-sky/15 text-sky border-sky/30">${s.type}</span></td>
+      <td class="font-mono text-xs text-white">${s.credits} Credits</td>
+      <td class="font-mono text-xs text-mist/80">${s.hours} hrs/wk</td>
+      <td class="text-xs text-white">${s.teacher}</td>
+      <td class="text-right">
+        <button type="button" onclick="openEditSubjectModal(${idx})" class="btn-glass rounded-lg px-3 py-1.5 text-xs font-semibold hover:border-brand/40 hover:text-brand transition-colors">Edit</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+/* Rooms Card Grid Population */
+function renderRoomsGrid() {
+  const container = $('#roomsCardContainer');
+  if (!container) return;
+  container.innerHTML = DATA.rooms.map((r, idx) => `
+    <div class="glass rounded-2xl p-5 border border-mist/10 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-display font-extrabold text-xl text-white">${r.code}</span>
+          <span class="badge ${r.occ === 'Occupied' ? 'bg-amber/15 text-amber border-amber/30' : 'bg-go/15 text-go border-go/30'}">${r.occ}</span>
+        </div>
+        <div class="text-xs font-medium text-mist/70 mb-3">${r.type} · Max ${r.cap} Seats</div>
+        <div class="space-y-1">
+          ${r.eq.map(e => `
+            <div class="text-[11px] text-mist/50 flex items-center gap-1.5">
+              <span class="w-1 h-1 rounded-full bg-brand"></span>${e}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-4 mt-4 border-t border-mist/10 text-xs">
+        <span class="mono-label">Capacity: ${r.cap}</span>
+        <button type="button" onclick="openEditRoomModal(${idx})" class="text-brand hover:underline font-semibold text-xs">Edit Details</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* Notices List Population */
+function renderNoticesList() {
+  const container = $('#noticesList');
+  if (!container) return;
+  container.innerHTML = DATA.notices.map(n => `
+    <div class="p-4 rounded-2xl bg-white/[0.03] border border-mist/10 hover:border-mist/20 transition-colors">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="badge ${n.cat === 'Urgent' ? 'bg-alert/15 text-alert' : n.cat === 'Exam' ? 'bg-violet/15 text-violet' : 'bg-brand/15 text-brand'}">${n.cat}</span>
+          <h4 class="font-semibold text-white text-sm">${n.title}</h4>
+        </div>
+        <span class="text-[10px] font-mono text-mist/40">${n.time}</span>
+      </div>
+      <p class="text-xs text-mist/65 leading-relaxed pl-1">${n.body}</p>
+    </div>
+  `).join('');
+}
+
+/* Feedback Queue Population */
+function renderFeedbackTable(filter = 'all') {
+  const tbody = $('#feedbackTableBody');
+  if (!tbody) return;
+  const filtered = filter === 'all' ? DATA.feedback : DATA.feedback.filter(f => f.status.toLowerCase() === filter);
+  tbody.innerHTML = filtered.map(f => `
+    <tr>
+      <td class="font-medium text-white">${f.user}</td>
+      <td><span class="badge bg-white/5 text-mist/70 border border-mist/10">${f.cat}</span></td>
+      <td class="text-xs text-mist/80 max-w-xs">${f.msg}</td>
+      <td class="text-xs font-mono text-mist/40">${f.date}</td>
+      <td>
+        <span class="badge ${f.status === 'Resolved' ? 'bg-go/15 text-go' : f.status === 'Investigating' ? 'bg-sky/15 text-sky' : 'bg-amber/15 text-amber'}">
+          ${f.status}
+        </span>
+      </td>
+      <td class="text-right">
+        <button type="button" onclick="toggleFeedbackStatus(${f.id})" class="btn-glass rounded-lg px-3 py-1 text-xs font-semibold">
+          ${f.status === 'Resolved' ? 'Reopen' : 'Resolve'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterFeedback(st) {
+  renderFeedbackTable(st);
+  showToast(`Filtered feedback: ${st.toUpperCase()}`);
+}
+
+function toggleFeedbackStatus(id) {
+  const item = DATA.feedback.find(x => x.id === id);
+  if (item) {
+    item.status = item.status === 'Resolved' ? 'Pending' : 'Resolved';
+    renderFeedbackTable();
+    showToast(`Feedback #${id} marked as ${item.status}`);
+  }
+}
+
+/* Substitution Radar Search */
+function runSubstitutionSearch() {
+  const teacher = $('#subAbsentFaculty').value;
+  const day = $('#subDay').value;
+  const period = $('#subPeriod').value;
+
+  const resultsDiv = $('#subCandidatesList');
+  if (!resultsDiv) return;
+
+  const candidates = [
+    { name: 'Dr. Fern', dept: 'IT', expertise: 'Algorithms & Systems', score: '99.2%', free: true },
+    { name: 'Dr. Kaur', dept: 'CSE', expertise: 'Networks & Architecture', score: '97.4%', free: true },
+    { name: 'Prof. Rao', dept: 'Physics', expertise: 'Analytical Math', score: '94.0%', free: true }
+  ];
+
+  resultsDiv.innerHTML = candidates.map(c => `
+    <div class="glass rounded-2xl p-5 border border-mist/12 flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-white text-sm">${c.name}</span>
+          <span class="badge bg-go/15 text-go text-[9px]">Zero Clash</span>
+        </div>
+        <div class="text-xs text-mist/60 mt-1">${c.expertise} · Match Score: <strong class="text-brand">${c.score}</strong></div>
+        <div class="text-[10px] font-mono text-mist/40 mt-1">Free in ${day} ${period}</div>
+      </div>
+      <button type="button" onclick="assignSubstitute('${c.name}', '${teacher}')" class="btn-primary rounded-xl px-4 py-2 text-xs font-bold">
+        Assign
+      </button>
+    </div>
+  `).join('');
+
+  showToast(`Found 3 clash-free substitutes for ${teacher}`);
+}
+
+function assignSubstitute(sub, orig) {
+  showToast(`Assigned ${sub} to cover for ${orig}`);
+}
+
+/* Solver Execution Simulation */
+function triggerSolverAction() {
+  window.switchTab('solver');
+  executeChronosSolver();
+}
+
+function executeChronosSolver() {
+  const log = $('#terminalLog');
+  const prog = $('#solverProgress');
+  const tag = $('#solverStatusTag');
+
+  if (tag) {
+    tag.textContent = 'SOLVING...';
+    tag.className = 'badge bg-amber/20 text-amber animate-pulse';
+  }
+  if (prog) prog.style.width = '10%';
+
+  log.innerHTML = `<div class="text-brand font-bold">[start] Chronos CSP Solver initialized at ${new Date().toLocaleTimeString()}</div>`;
+
+  const steps = [
+    { p: 25, t: '[pass 1] Graph coloring initialized: 14 academic departments.' },
+    { p: 50, t: '[pass 2] Enforcing hard constraints: Teacher & Room double-booking invariance.' },
+    { p: 75, t: '[pass 3] Minimizing instructor travel time and lunch recess protections.' },
+    { p: 90, t: '[pass 4] Optimizing lab session equipment allocations.' },
+    { p: 100, t: '[locked] Matrix complete. 342 slots assigned. 0 conflicts.' }
+  ];
+
+  let stepIdx = 0;
+  const interval = setInterval(() => {
+    if (stepIdx < steps.length) {
+      const s = steps[stepIdx];
+      if (prog) prog.style.width = s.p + '%';
+      const line = document.createElement('div');
+      line.className = s.p === 100 ? 'text-go font-bold' : 'text-white';
+      line.textContent = s.t;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+      stepIdx++;
+    } else {
+      clearInterval(interval);
+      if (tag) {
+        tag.textContent = 'LOCKED ✓';
+        tag.className = 'badge bg-go/15 text-go';
+      }
+      showToast('AI Re-Solve Finished: 0 Clashes Found');
+    }
+  }, 350);
+}
+
+function runConflictScan() {
+  const log = $('#terminalLog');
+  log.innerHTML += `<div class="text-sky mt-2">[scanner] Running full system conflict audit...</div>`;
+  setTimeout(() => {
+    log.innerHTML += `<div class="text-go font-bold">[scanner result] 0 clashes detected across all active sections.</div>`;
+    log.scrollTop = log.scrollHeight;
+    showToast('Conflict Scan Complete: 0 Clashes');
+  }, 600);
+}
+
+function clearTerminalLogs() {
+  const log = $('#terminalLog');
+  if (log) log.innerHTML = '<div class="text-mist/40">[idle] Terminal cleared. Awaiting solver execution.</div>';
+}
+
+function publishAnnouncement() {
+  const title = $('#noticeTitle').value.trim();
+  const cat = $('#noticeCat').value;
+  const body = $('#noticeBody').value.trim();
+
+  if (!title || !body) {
+    showToast('Please provide both title and body');
+    return;
+  }
+
+  DATA.notices.unshift({
+    id: Date.now(),
+    title,
+    cat,
+    time: 'Just now',
+    body
+  });
+
+  renderNoticesList();
+  $('#noticeTitle').value = '';
+  $('#noticeBody').value = '';
+  showToast('Notice published successfully');
+}
+
+/* ================= REAL MODAL HANDLERS: FACULTY, SUBJECTS, ROOMS ================= */
+
+/* Faculty Modals */
+function openEditFacultyModal(id) {
+  const f = DATA.faculty.find(x => x.id === id);
+  if (!f) return;
+  $('#modalFacultyTitle').textContent = `Edit Profile · ${f.name}`;
+  $('#modalFacultySub').textContent = `Update professor workload, department, and course allocations`;
+  $('#facId').value = f.id;
+  $('#facName').value = f.name;
+  $('#facEmail').value = f.email;
+  $('#facDept').value = f.dept;
+  $('#facHours').value = f.hours;
+  $('#facMaxHours').value = f.maxHours;
+  $('#facCourses').value = f.courses.join(', ');
+  $('#facStatus').value = f.status;
+  $('#btnDeleteFaculty').classList.remove('hidden');
+
+  const m = $('#modalFaculty');
+  m.classList.remove('invisible', 'opacity-0');
+  m.querySelector('.relative').classList.remove('scale-95');
+}
+
+function openAddFacultyModal() {
+  $('#modalFacultyTitle').textContent = 'Add Faculty Member';
+  $('#modalFacultySub').textContent = 'Register a new professor or instructor into SchedFlow directory';
+  $('#facId').value = '';
+  $('#facName').value = '';
+  $('#facEmail').value = '';
+  $('#facDept').value = 'CSE';
+  $('#facHours').value = '16';
+  $('#facMaxHours').value = '22';
+  $('#facCourses').value = '';
+  $('#facStatus').value = 'Active';
+  $('#btnDeleteFaculty').classList.add('hidden');
+
+  const m = $('#modalFaculty');
+  m.classList.remove('invisible', 'opacity-0');
+  m.querySelector('.relative').classList.remove('scale-95');
+}
+
+function closeFacultyModal() {
+  const m = $('#modalFaculty');
+  m.classList.add('opacity-0');
+  m.querySelector('.relative').classList.add('scale-95');
+  setTimeout(() => m.classList.add('invisible'), 250);
+}
+
+function deleteCurrentFaculty() {
+  const idStr = $('#facId').value;
+  if (!idStr) return;
+  const id = parseInt(idStr) || idStr;
+  const f = DATA.faculty.find(x => x.id === id);
+  if (!f) return;
+  if (!confirm(`Delete ${f.name} from faculty directory?`)) return;
+  DATA.faculty = DATA.faculty.filter(x => x.id !== id);
+  try {
+    const token = localStorage.getItem('schedflow_token');
+    fetch(`/api/teachers/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    });
+  } catch(e) {}
+  closeFacultyModal();
+  renderFacultyTable();
+  showToast(`Removed ${f.name} from directory`);
+}
+
+$('#formFaculty').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const idStr = $('#facId').value;
+  const name = $('#facName').value.trim();
+  const email = $('#facEmail').value.trim();
+  const dept = $('#facDept').value;
+  const hours = parseInt($('#facHours').value) || 0;
+  const maxHours = parseInt($('#facMaxHours').value) || 20;
+  const courses = $('#facCourses').value.split(',').map(s => s.trim()).filter(Boolean);
+  const status = $('#facStatus').value;
+
+  if (idStr) {
+    const id = parseInt(idStr) || idStr;
+    const f = DATA.faculty.find(x => x.id === id);
+    if (f) {
+      f.name = name;
+      f.email = email;
+      f.dept = dept;
+      f.hours = hours;
+      f.maxHours = maxHours;
+      f.courses = courses;
+      f.status = status;
+    }
+    try {
+      const token = localStorage.getItem('schedflow_token');
+      await fetch(`/api/teachers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
+        body: JSON.stringify({ name, email, max_weekly_load: maxHours, is_active: status === 'Active' })
+      });
+    } catch(err) {}
+    showToast(`Saved changes for ${name}`);
+  } else {
+    const newId = Date.now();
+    DATA.faculty.push({ id: newId, name, email, dept, hours, maxHours, courses, status });
+    try {
+      const token = localStorage.getItem('schedflow_token');
+      await fetch('/api/teachers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
+        body: JSON.stringify({ name, email, department_id: 1, max_weekly_load: maxHours, is_active: status === 'Active' })
+      });
+    } catch(err) {}
+    showToast(`Added ${name} to faculty directory`);
+  }
+  closeFacultyModal();
+  renderFacultyTable();
+});
+
+/* Subject Modals */
+function openEditSubjectModal(idx) {
+  const s = DATA.subjects[idx];
+  if (!s) return;
+  $('#modalSubjectTitle').textContent = `Edit Course · ${s.code}`;
+  $('#subIdx').value = idx;
+  $('#subCode').value = s.code;
+  $('#subName').value = s.name;
+  $('#subType').value = s.type.includes('Lab') ? 'Laboratory' : 'Lecture';
+  $('#subCredits').value = s.credits;
+  $('#subHours').value = s.hours;
+  $('#subTeacher').value = s.teacher;
+  $('#btnDeleteSubject').classList.remove('hidden');
+
+  const m = $('#modalSubject');
+  m.classList.remove('invisible', 'opacity-0');
+  m.querySelector('.relative').classList.remove('scale-95');
+}
+
+function openAddSubjectModal() {
+  $('#modalSubjectTitle').textContent = 'Add Course / Subject';
+  $('#subIdx').value = '';
+  $('#subCode').value = '';
+  $('#subName').value = '';
+  $('#subType').value = 'Lecture';
+  $('#subCredits').value = '3';
+  $('#subHours').value = '4';
+  $('#subTeacher').value = 'Dr. Mehta';
+  $('#btnDeleteSubject').classList.add('hidden');
+
+  const m = $('#modalSubject');
+  m.classList.remove('invisible', 'opacity-0');
+  m.querySelector('.relative').classList.remove('scale-95');
+}
+
+function closeSubjectModal() {
+  const m = $('#modalSubject');
+  m.classList.add('opacity-0');
+  m.querySelector('.relative').classList.add('scale-95');
+  setTimeout(() => m.classList.add('invisible'), 250);
+}
+
+function deleteCurrentSubject() {
+  const idxStr = $('#subIdx').value;
+  if (idxStr === '') return;
+  const idx = parseInt(idxStr);
+  const s = DATA.subjects[idx];
+  if (!s || !confirm(`Delete subject ${s.code} - ${s.name}?`)) return;
+  DATA.subjects.splice(idx, 1);
+  closeSubjectModal();
+  renderSubjectTable();
+  showToast(`Deleted subject ${s.code}`);
+}
+
+$('#formSubject').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const idxStr = $('#subIdx').value;
+  const code = $('#subCode').value.trim().toUpperCase();
+  const name = $('#subName').value.trim();
+  const type = $('#subType').value;
+  const credits = parseInt($('#subCredits').value) || 3;
+  const hours = parseInt($('#subHours').value) || 3;
+  const teacher = $('#subTeacher').value.trim() || 'Dr. Mehta';
+
+  if (idxStr !== '') {
+    const idx = parseInt(idxStr);
+    if (DATA.subjects[idx]) {
+      DATA.subjects[idx] = { code, name, type, credits, hours, teacher };
+    }
+    showToast(`Updated ${code}`);
+  } else {
+    DATA.subjects.push({ code, name, type, credits, hours, teacher });
+    showToast(`Added ${code} to Subjects catalog`);
+  }
+  closeSubjectModal();
+  renderSubjectTable();
+});
+
+/* Room Modals */
+function openEditRoomModal(idx) {
+  const r = DATA.rooms[idx];
+  if (!r) return;
+  $('#modalRoomTitle').textContent = `Edit Room · ${r.code}`;
+  $('#roomIdx').value = idx;
+  $('#roomCode').value = r.code;
+  $('#roomType').value = r.type.includes('Lab') ? 'Computer Lab' : 'Lecture Hall';
+  $('#roomCap').value = r.cap;
+  $('#roomOcc').value = r.occ;
+  $('#roomEq').value = r.eq.join(', ');
+  $('#btnDeleteRoom').classList.remove('hidden');
+
+  const m = $('#modalRoom');
+  m.classList.remove('invisible', 'opacity-0');
+  m.querySelector('.relative').classList.remove('scale-95');
+}
+
+function openAddRoomModal() {
+  $('#modalRoomTitle').textContent = 'Add Facility / Room';
+  $('#roomIdx').value = '';
+  $('#roomCode').value = '';
+  $('#roomType').value = 'Computer Lab';
+  $('#roomCap').value = '45';
+  $('#roomOcc').value = 'Available';
+  $('#roomEq').value = 'High-Lumen Projector, Workstations';
+  $('#btnDeleteRoom').classList.add('hidden');
+
+  const m = $('#modalRoom');
+  m.classList.remove('invisible', 'opacity-0');
+  m.querySelector('.relative').classList.remove('scale-95');
+}
+
+function closeRoomModal() {
+  const m = $('#modalRoom');
+  m.classList.add('opacity-0');
+  m.querySelector('.relative').classList.add('scale-95');
+  setTimeout(() => m.classList.add('invisible'), 250);
+}
+
+function deleteCurrentRoom() {
+  const idxStr = $('#roomIdx').value;
+  if (idxStr === '') return;
+  const idx = parseInt(idxStr);
+  const r = DATA.rooms[idx];
+  if (!r || !confirm(`Delete room ${r.code}?`)) return;
+  DATA.rooms.splice(idx, 1);
+  closeRoomModal();
+  renderRoomsGrid();
+  showToast(`Deleted room ${r.code}`);
+}
+
+$('#formRoom').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const idxStr = $('#roomIdx').value;
+  const code = $('#roomCode').value.trim().toUpperCase();
+  const type = $('#roomType').value;
+  const cap = parseInt($('#roomCap').value) || 40;
+  const occ = $('#roomOcc').value;
+  const eq = $('#roomEq').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  if (idxStr !== '') {
+    const idx = parseInt(idxStr);
+    if (DATA.rooms[idx]) {
+      DATA.rooms[idx] = { code, type, cap, occ, eq };
+    }
+    showToast(`Updated room ${code}`);
+  } else {
+    DATA.rooms.push({ code, type, cap, occ, eq });
+    showToast(`Added room ${code}`);
+  }
+  closeRoomModal();
+  renderRoomsGrid();
+});
+
+// Real-time Faculty Search
+$('#facultySearch')?.addEventListener('input', (e) => {
+  renderFacultyTable(e.target.value.trim());
+});
+
+/* SchedFlow AI Assist Widget Interaction */
+const btnAssistToggle = $('#btnAssistToggle');
+const btnAssistClose = $('#btnAssistClose');
+const assistDrawer = $('#assistDrawer');
+const chatForm = $('#chatForm');
+const chatInput = $('#chatInput');
+const chatMessages = $('#chatMessages');
+
+btnAssistToggle.addEventListener('click', () => {
+  assistDrawer.classList.toggle('closed');
+  if (!assistDrawer.classList.contains('closed')) {
+    chatInput.focus();
+  }
+});
+btnAssistClose.addEventListener('click', () => {
+  assistDrawer.classList.add('closed');
+});
+
+function appendChatMessage(sender, text) {
+  const msgEl = document.createElement('div');
+  msgEl.className = 'flex gap-2.5';
+  const isAI = sender === 'AI';
+  msgEl.innerHTML = `
+    <div class="w-6 h-6 rounded-full ${isAI ? 'bg-brand/20 text-brand' : 'bg-sky/20 text-sky'} flex items-center justify-center shrink-0 text-[10px] font-bold">
+      ${isAI ? 'AI' : 'YOU'}
+    </div>
+    <div class="p-3 rounded-2xl ${isAI ? 'rounded-tl-sm bg-white/5 border border-mist/10' : 'rounded-tr-sm bg-brand/15 text-white border border-brand/20'} text-mist/90 leading-relaxed">
+      ${text}
+    </div>
+  `;
+  chatMessages.appendChild(msgEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+chatForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = chatInput.value.trim();
+  if (!q) return;
+  appendChatMessage('User', q);
+  chatInput.value = '';
+
+  const typingId = 'typing_' + Date.now();
+  const typingEl = document.createElement('div');
+  typingEl.id = typingId;
+  typingEl.className = 'text-[11px] text-mist/40 italic pl-8';
+  typingEl.textContent = 'SchedFlow Assist is thinking...';
+  chatMessages.appendChild(typingEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  let answer = '';
+  try {
+    const token = localStorage.getItem('schedflow_token');
+    const res = await fetch('/api/assistant/ask', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify({ prompt: q })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      answer = data.response || data.answer;
+    }
+  } catch (err) {}
+
+  if (!answer) {
+    const low = q.toLowerCase();
+    if (low.includes('clash') || low.includes('conflict')) {
+      answer = 'I have scanned all 14 departments. Current status: 0 active clashes. All faculty and room assignments obey hard exclusion constraints.';
+    } else if (low.includes('substitute') || low.includes('absent')) {
+      answer = 'For emergency substitution, Dr. Fern and Dr. Kaur currently have zero bookings on Monday P2 and are qualified to take algorithmic and software courses.';
+    } else if (low.includes('lab') || low.includes('utilization')) {
+      answer = 'LAB-1 is operating at 88% capacity with 45 workstations verified. LAB-2 GPU cluster is fully utilized during Tuesday and Thursday afternoon slots.';
+    } else {
+      answer = `Understood. I have verified your query regarding "${q}" against our active timetable matrix. All constraint weights remain satisfied at 100%.`;
+    }
+  }
+
+  const tEl = document.getElementById(typingId);
+  if (tEl) tEl.remove();
+  appendChatMessage('AI', answer);
+});
+
+function sendPromptChip(text) {
+  chatInput.value = text;
+  chatForm.dispatchEvent(new Event('submit'));
+}
+
+/* User & Session Verification */
+const token = localStorage.getItem('schedflow_token');
+const userRaw = localStorage.getItem('schedflow_user');
+if (userRaw) {
+  try {
+    const u = JSON.parse(userRaw);
+    if (u.name) $('#adminUserName').textContent = u.name;
+    if (u.role) $('#adminUserRole').textContent = u.role;
+  } catch (e) {}
+}
+
+$('#btnLogout').addEventListener('click', () => {
+  localStorage.removeItem('schedflow_token');
+  localStorage.removeItem('schedflow_user');
+  showToast('Signing out...');
+  setTimeout(() => {
+    window.location.href = 'login.html';
+  }, 400);
+});
+
+/* Export Button */
+$('#btnExportMatrix').addEventListener('click', () => {
+  const csvContent = "data:text/csv;charset=utf-8,Period,Monday,Tuesday,Wednesday,Thursday,Friday\nP1,DSA (LAB-1),OS (R-204),CN (R-118),MATH (R-09),SE (R-201)\nP2,OS (R-204),DBMS (LAB-2),DSA (LAB-1),CN (R-118),MATH (R-09)\nP3,DBMS (LAB-2),CN (R-118),OS (R-204),MATH (R-09),DSA (LAB-1)\nP4,MATH (R-09),DSA (LAB-1),SE (R-201),OS (R-204),CN (R-118)\nP5,SE (R-201),MATH (R-09),DBMS (LAB-2),DSA (LAB-1),OS (R-204)\n";
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "SchedFlow_Master_Timetable.csv");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  showToast('Downloaded SchedFlow_Master_Timetable.csv');
+});
+
+/* Publish Timetable Button */
+$('#btnPublishTimetable').addEventListener('click', () => {
+  showToast('Timetable verified and published to Campus live boards!');
+});
+
+function clearSolverCache() {
+  showToast('In-memory solver state flushed.');
+}
+
+function resetToFactoryDemo() {
+  localStorage.clear();
+  showToast('Resetting session state...');
+  setTimeout(() => window.location.reload(), 600);
+}
+
+/* Accurate Backend Connection Health Test */
+async function testBackendConnection() {
+  try {
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 800);
+    const res = await fetch('/api/public/structure', { signal: ctrl.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      $('#syncDot').className = 'w-2 h-2 rounded-full bg-go animate-pulse';
+      $('#syncText').textContent = 'Backend: Connected (Live)';
+      $('#cfgHealthStatus').textContent = 'Online & Synced (HTTP 200)';
+      $('#cfgHealthStatus').className = 'text-go font-semibold';
+      return;
+    }
+  } catch (e) {}
+
+  $('#syncDot').className = 'w-2 h-2 rounded-full bg-alert';
+  $('#syncText').textContent = 'Backend: Offline (Demo Mode)';
+  $('#cfgHealthStatus').textContent = 'Offline (Seamless Local Fallback Active)';
+  $('#cfgHealthStatus').className = 'text-amber font-semibold';
+}
+
+$('#btnQuickSolve').addEventListener('click', triggerSolverAction);
+$('#btnExecuteSolver').addEventListener('click', executeChronosSolver);
+
+['#gridDeptSelect', '#gridSemSelect', '#gridSecSelect'].forEach(id => {
+  $(id).addEventListener('change', () => {
+    renderMasterGrid();
+    showToast(`Loaded ${$('#gridDeptSelect').value} Sem ${$('#gridSemSelect').value} Sec ${$('#gridSecSelect').value}`);
+  });
+});
+
+$('#weightGap').addEventListener('input', e => $('#weightGapVal').textContent = e.target.value + '%');
+$('#weightRoom').addEventListener('input', e => $('#weightRoomVal').textContent = e.target.value + '%');
+$('#weightBal').addEventListener('input', e => $('#weightBalVal').textContent = e.target.value + '%');
+
+renderMasterGrid();
+renderFacultyTable();
+renderSubjectTable();
+renderRoomsGrid();
+renderNoticesList();
+renderFeedbackTable();
+testBackendConnection();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <!-- Intense Celestial Blue Glow Filter -->
+    <filter id="superGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur1" />
+      <feGaussianBlur stdDeviation="24" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Radial Aura Gradient -->
+    <radialGradient id="auraRadial" cx="50%" cy="50%" r="50%">
+      <feStop offset="0%" stop-color="#00f0ff" stop-opacity="0.85" />
+      <feStop offset="45%" stop-color="#0284c7" stop-opacity="0.6" />
+      <feStop offset="75%" stop-color="#0369a1" stop-opacity="0.3" />
+      <feStop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Diamond Core Gradient -->
+    <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <feStop offset="0%" stop-color="#ffffff" />
+      <feStop offset="30%" stop-color="#67e8f9" />
+      <feStop offset="70%" stop-color="#00d2ff" />
+      <feStop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+
+    <!-- Outer Ring Gradient -->
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <feStop offset="0%" stop-color="#00f0ff" stop-opacity="0.9" />
+      <feStop offset="50%" stop-color="#38bdf8" stop-opacity="0.4" />
+      <feStop offset="100%" stop-color="#0284c7" stop-opacity="0.8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient Radiant Blue Aura Glow Sphere (No Black Fill) -->
+  <circle cx="128" cy="128" r="118" fill="url(#auraRadial)" />
+
+  <!-- Luminous Outer Ring with Subtle Depth -->
+  <circle cx="128" cy="128" r="114" fill="none" stroke="url(#ringGrad)" stroke-width="4" stroke-dasharray="12 4" opacity="0.75" />
+  <circle cx="128" cy="128" r="104" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-opacity="0.4" />
+
+  <!-- SchedFlow 4-Quadrant Diamond Mark with Multi-Stage Cyan/Blue Glow -->
+  <g filter="url(#superGlow)">
+    <path fill="url(#diamondGrad)" d="M 0 128 C 70.692 128 128 185.308 128 256 L 64 256 C 64 220.654 35.346 192 0 192 Z M 256 192 C 220.654 192 192 220.654 192 256 L 128 256 C 128 185.308 185.308 128 256 128 Z M 128 0 C 128 70.692 70.692 128 0 128 L 0 64 C 35.346 64 64 35.346 64 0 Z M 192 0 C 192 35.346 220.654 64 256 64 L 256 128 C 185.308 128 128 70.692 128 0 Z" transform="translate(32, 32) scale(0.75)" />
+  </g>
+
+  <!-- Central Specular Sparkle Core -->
+  <circle cx="128" cy="128" r="4" fill="#ffffff" opacity="0.9" filter="url(#superGlow)" />
+</svg>

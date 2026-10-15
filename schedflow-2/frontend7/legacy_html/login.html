@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en" class="lock">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchedFlow Aura — Administrative Access</title>
+<meta name="description" content="Sign in with your institution credentials to launch the SchedFlow solver console.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23000'/%3E%3Crect x='6' y='6' width='9' height='9' rx='2.5' fill='%2338BDF8'/%3E%3Crect x='17' y='6' width='9' height='9' rx='2.5' fill='%2374C947'/%3E%3Crect x='6' y='17' width='9' height='9' rx='2.5' fill='%2334D399'/%3E%3Crect x='17' y='17' width='9' height='9' rx='2.5' fill='%23A78BFA'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { deep:'#000000', mist:'#E9EEF5', brand:'#74C947', brand2:'#8ce05c', go:'#34D399', alert:'#FF4D5E',
+            sky:'#38BDF8', violet:'#A78BFA', teal:'#2DD4BF', amber:'#FFB224', rose:'#FF7A9C' },
+  fontFamily: { display:['"Plus Jakarta Sans"','Outfit','sans-serif'], sans:['"Plus Jakarta Sans"','sans-serif'], mono:['"IBM Plex Mono"','monospace'] }
+}}}
+</script>
+<style>
+  :root{ --mist:#E9EEF5; --brand:#74C947; --go:#34D399; --alert:#FF4D5E; }
+  html,body{ height:100%; background:#000; overflow:hidden }
+  html.lock{ overflow:hidden }
+  body{ overscroll-behavior:none; background:#000 }
+  ::selection{ background:var(--brand); color:#081a05 }
+  ::-webkit-scrollbar{ width:4px; height:4px }
+  ::-webkit-scrollbar-track{ background:transparent }
+  ::-webkit-scrollbar-thumb{ background:rgba(148,163,184,.25); border-radius:4px }
+
+  #scene{ position:fixed; inset:0; width:100%; height:100%; display:block; z-index:1 }
+
+  .mono-label{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:rgba(233,238,245,.45) }
+
+  [data-rise]{ opacity:0; transform:translateY(20px);
+    transition:opacity .65s cubic-bezier(.2,.7,.2,1), transform .65s cubic-bezier(.2,.7,.2,1);
+    transition-delay:var(--d,0s) }
+  .view.on [data-rise]{ opacity:1; transform:none }
+
+  /* ---------- liquid glass ---------- */
+  .glass{
+    background:rgba(16,20,32,.55);
+    -webkit-backdrop-filter:blur(20px) saturate(150%);
+    backdrop-filter:blur(20px) saturate(150%);
+    border:1px solid rgba(233,238,245,.12);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 14px 40px rgba(0,0,0,.5);
+  }
+  .glass-strong{
+    background:rgba(13,17,28,.74);
+    -webkit-backdrop-filter:blur(28px) saturate(160%);
+    backdrop-filter:blur(28px) saturate(160%);
+    border:1px solid rgba(233,238,245,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 30px 70px rgba(0,0,0,.6);
+  }
+  .liquid{ position:relative; overflow:hidden }
+  .liquid::before{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:radial-gradient(180px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.1), transparent 65%);
+    opacity:0; transition:opacity .45s;
+  }
+  .liquid:hover::before{ opacity:1 }
+  @media (pointer:coarse){ .liquid::before{ display:none } }
+
+  /* ---------- buttons ---------- */
+  .btn-primary{
+    position:relative; overflow:hidden;
+    background:var(--brand); color:#081a05; font-weight:800;
+    box-shadow:0 12px 34px rgba(116,201,71,.30), inset 0 1px 0 rgba(255,255,255,.4);
+    transition:transform .35s cubic-bezier(.2,.9,.3,1.3), box-shadow .35s, filter .35s;
+    will-change:transform;
+  }
+  .btn-primary:hover{ filter:brightness(1.07); box-shadow:0 18px 48px rgba(116,201,71,.42), inset 0 1px 0 rgba(255,255,255,.4) }
+  .btn-primary:active{ filter:brightness(.9) }
+  .btn-primary:disabled{ filter:saturate(.6) brightness(.85); pointer-events:none }
+  .btn-primary .shine{ position:absolute; top:-20%; bottom:-20%; width:36%; left:-55%;
+    background:rgba(255,255,255,.35); transform:skewX(-22deg); pointer-events:none;
+    transition:left .6s cubic-bezier(.4,0,.2,1) }
+  .btn-primary:hover .shine{ left:118% }
+  .btn-primary svg{ transition:transform .35s cubic-bezier(.2,.9,.3,1.3) }
+  .btn-primary:hover svg{ transform:translateX(4px) }
+  .btn-glass{
+    position:relative; overflow:hidden;
+    background:rgba(233,238,245,.06); border:1px solid rgba(233,238,245,.16); color:var(--mist);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+    transition:border-color .35s, transform .35s, color .35s, background .35s;
+  }
+  .btn-glass:hover{ border-color:var(--c,var(--brand)); color:#fff; transform:translateY(-2px); background:rgba(233,238,245,.1) }
+  .btn-glass svg{ transition:transform .35s }
+  .btn-glass:hover svg{ transform:translateX(-3px) }
+  .rip{ position:absolute; border-radius:50%; width:24px; height:24px; background:rgba(255,255,255,.35);
+    transform:scale(0); animation:rip .55s ease-out forwards; pointer-events:none }
+  @keyframes rip{ to{ transform:scale(3.4); opacity:0 } }
+  .spin{ width:14px; height:14px; border:2px solid rgba(26,14,8,.35); border-top-color:#1A0E08;
+    border-radius:50%; animation:spin .7s linear infinite; flex:none }
+  @keyframes spin{ to{ transform:rotate(360deg) } }
+  :focus-visible{ outline:2px solid var(--brand); outline-offset:3px }
+
+  .stroke-text{ color:transparent; -webkit-text-stroke:1.5px rgba(233,238,245,.85) }
+
+  /* ---------- views ---------- */
+  .view{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:88px 20px 72px; opacity:0; visibility:hidden; transform:translateY(14px);
+    transition:opacity .55s cubic-bezier(.2,.7,.2,1), transform .55s cubic-bezier(.2,.7,.2,1), visibility 0s .55s;
+    pointer-events:none; overflow-y:auto; overflow-x:hidden }
+  .view.on{ opacity:1; visibility:visible; transform:none; pointer-events:auto; transition-delay:0s }
+
+  /* ---------- fields ---------- */
+  .fieldlbl{ display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.26em;
+    text-transform:uppercase; color:rgba(233,238,245,.45); margin-bottom:8px }
+  .inpwrap{ position:relative }
+  .inpwrap .lead{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:17px; height:17px;
+    color:rgba(233,238,245,.4); pointer-events:none; transition:color .3s }
+  .inpwrap:focus-within .lead{ color:var(--brand) }
+  .inp{
+    width:100%; border-radius:14px; padding:13px 44px 13px 42px; font-size:14px; color:var(--mist);
+    background:rgba(233,238,245,.05); border:1px solid rgba(233,238,245,.14); outline:none;
+    transition:border-color .3s, background .3s, box-shadow .3s;
+  }
+  .inp:focus{ border-color:var(--brand); background:rgba(233,238,245,.08);
+    box-shadow:0 0 0 4px rgba(116,201,71,.12) }
+  .inp::placeholder{ color:rgba(233,238,245,.28) }
+  .inp:disabled{ opacity:.55 }
+  .eye{ position:absolute; right:8px; top:50%; transform:translateY(-50%); padding:8px; border-radius:10px;
+    color:rgba(233,238,245,.4); transition:color .3s, background .3s }
+  .eye:hover{ color:var(--mist); background:rgba(233,238,245,.07) }
+
+  /* inline error */
+  #formErr{ max-height:0; overflow:hidden; opacity:0; transform:translateY(-4px);
+    transition:all .4s cubic-bezier(.2,.7,.2,1); margin-top:0 }
+  #formErr.on{ max-height:60px; opacity:1; transform:none; margin-top:14px }
+  #formErr .box{ display:flex; align-items:center; gap:10px; border:1px solid rgba(255,77,94,.35);
+    background:rgba(255,77,94,.07); border-radius:12px; padding:10px 12px;
+    font-size:12px; color:rgba(233,238,245,.75) }
+
+  /* ---------- roster ---------- */
+  .divider{ display:flex; align-items:center; gap:12px; margin:22px 0 12px }
+  .divider::before,.divider::after{ content:""; flex:1; height:1px; background:rgba(233,238,245,.1) }
+  .rrow{ position:relative; display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    padding:10px 12px; border-radius:14px; border:1px solid rgba(233,238,245,.1);
+    background:rgba(233,238,245,.03);
+    transition:border-color .35s, background .35s, transform .35s }
+  .rrow::before{ content:""; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:3px;
+    background:var(--c); transform:scaleY(0); transform-origin:top; transition:transform .45s cubic-bezier(.87,0,.13,1) }
+  .rrow:hover{ border-color:color-mix(in srgb, var(--c) 45%, transparent); background:rgba(233,238,245,.06); transform:translateX(6px) }
+  .rrow:hover::before{ transform:scaleY(1) }
+  .rava{ width:36px; height:36px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
+    background:color-mix(in srgb, var(--c) 16%, transparent); color:var(--c);
+    transition:transform .4s cubic-bezier(.2,.9,.3,1.2) }
+  .rrow:hover .rava{ transform:rotate(-6deg) scale(1.08) }
+  .rrow .rname{ display:block; font-weight:600; font-size:13.5px; color:var(--mist) }
+  .rrow .rmail{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:rgba(233,238,245,.42); margin-top:1px }
+  .rrow .rrole{ margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.12em;
+    text-transform:uppercase; color:rgba(233,238,245,.4); flex:none }
+  .rrow .rarrow{ width:15px; height:15px; flex:none; color:var(--c); opacity:0; transform:translateX(-8px); transition:all .35s }
+  .rrow:hover .rarrow{ opacity:1; transform:none }
+  .rrow.busy{ pointer-events:none; opacity:.7 }
+
+  /* success check */
+  .checkring{ width:64px; height:64px; border-radius:50%; margin:0 auto;
+    background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.5);
+    display:flex; align-items:center; justify-content:center;
+    animation:checkIn .6s cubic-bezier(.2,.9,.3,1.4) both }
+  @keyframes checkIn{ from{ transform:scale(.4); opacity:0 } }
+  .checkring svg{ width:26px; height:26px; color:var(--go) }
+  .checkring svg path{ stroke-dasharray:26; stroke-dashoffset:26; animation:drawCheck .5s .25s ease-out forwards }
+  @keyframes drawCheck{ to{ stroke-dashoffset:0 } }
+
+  .shake{ animation:shakeX .45s }
+  @keyframes shakeX{ 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(3px)} }
+
+  .pulseGlow{ animation:pg 1.6s ease-out 2 }
+  @keyframes pg{ 0%,100%{ box-shadow:0 12px 34px rgba(116,201,71,.30), inset 0 1px 0 rgba(255,255,255,.4) }
+    50%{ box-shadow:0 12px 44px rgba(116,201,71,.65), inset 0 1px 0 rgba(255,255,255,.4) } }
+
+  /* loader tiles */
+  .ld-tile{ width:26px; height:26px; border-radius:7px; animation:ldPulse 1.4s ease-in-out infinite }
+  @keyframes ldPulse{ 0%,100%{transform:scale(.82); opacity:.55} 50%{transform:scale(1); opacity:1} }
+
+  /* cursor */
+  #cursorDot{ position:fixed; top:0; left:0; width:6px; height:6px; border-radius:50%; background:var(--brand);
+    z-index:100; pointer-events:none; opacity:0 }
+  #cursorRing{ position:fixed; top:0; left:0; width:34px; height:34px; border-radius:50%;
+    border:1.5px solid rgba(116,201,71,.5); z-index:99; pointer-events:none; opacity:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:width .35s, height .35s, background-color .35s, border-color .35s }
+  #cursorRing.is-active{ width:48px; height:48px; border-color:rgba(116,201,71,.9) }
+  @media (hover:none),(pointer:coarse){ #cursorDot,#cursorRing{ display:none } }
+  body { cursor: default; }
+  a, button, [data-hover] { cursor: pointer; }
+  input { cursor: text; }
+
+  @media (prefers-reduced-motion: reduce){
+    .ld-tile{ animation:none }
+    [data-rise]{ transition:none; opacity:1; transform:none }
+    .checkring,.checkring svg path{ animation:none; stroke-dashoffset:0 }
+  }
+</style>
+</head>
+
+<body class="text-mist font-sans antialiased">
+
+  <!-- WebGL living background: tiles on a fixed rail — pure AMOLED black -->
+  <canvas id="scene"></canvas>
+
+  <!-- top bar -->
+  <header class="fixed top-4 inset-x-0 z-40 flex items-center justify-between px-4 md:px-6">
+    <button type="button" id="btnBack" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.18em] uppercase font-bold flex items-center gap-1.5">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 4 12l7 7M4 12h16"/></svg>
+      Back
+    </button>
+    <div class="flex items-center gap-3">
+      <a href="timetable.html" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.18em] uppercase font-bold flex items-center gap-1.5 !text-brand">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Live Timetable
+      </a>
+      <a href="landing.html" data-hover class="glass rounded-full px-4 py-2 flex items-center gap-2.5">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#0B101A"/><rect x="4.5" y="4.5" width="7" height="7" rx="2" fill="#38BDF8"/><rect x="12.5" y="4.5" width="7" height="7" rx="2" fill="#74C947"/><rect x="4.5" y="12.5" width="7" height="7" rx="2" fill="#34D399"/><rect x="12.5" y="12.5" width="7" height="7" rx="2" fill="#A78BFA"/></svg>
+        <span class="font-display font-extrabold text-[13px] tracking-wide">SchedFlow <span class="text-brand">Aura</span></span>
+      </a>
+    </div>
+  </header>
+
+  <main class="fixed inset-0 z-10">
+    <!-- ============ VIEW · LOGIN ============ -->
+    <section id="viewLogin" class="view on">
+      <div class="w-full max-w-[430px]">
+        <div class="text-center mb-6" data-rise style="--d:.05s">
+          <div class="mono-label !text-alert/80 mb-3 flex items-center justify-center gap-2">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Restricted · Staff only
+          </div>
+          <h1 class="font-display font-extrabold tracking-[-0.035em] leading-[1.08] text-[clamp(2.1rem,4.8vw,3.2rem)] text-white">
+            Administrative <span class="bg-gradient-to-r from-brand via-brand2 to-emerald-400 bg-clip-text text-transparent">Access</span>
+          </h1>
+          <p class="mt-3 text-sm text-mist/55 leading-relaxed max-w-xs mx-auto">
+            Sign in with your institution email to open the solver console.
+          </p>
+        </div>
+
+        <div class="glass-strong rounded-3xl p-6 md:p-7" id="loginCard" data-rise style="--d:.15s">
+          <form id="authForm" novalidate>
+            <div class="mb-4">
+              <label for="adEmail" class="fieldlbl">Institution Email</label>
+              <div class="inpwrap">
+                <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
+                <input id="adEmail" type="email" class="inp" placeholder="you@institution.edu" autocomplete="username" spellcheck="false">
+              </div>
+            </div>
+            <div class="mb-2">
+              <label for="adPass" class="fieldlbl">Password</label>
+              <div class="inpwrap">
+                <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.4"/></svg>
+                <input id="adPass" type="password" class="inp" placeholder="••••••••" autocomplete="current-password">
+                <button type="button" id="eyeBtn" class="eye" data-hover aria-label="Show password">
+                  <svg id="eyeOn" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg>
+                  <svg id="eyeOff" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-6.5 10-6.5c2.2 0 4 .8 5.5 1.8M22 12s-3.5 6.5-10 6.5c-2.2 0-4-.8-5.5-1.8"/><path d="M4 20 20 4"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div id="formErr" role="alert">
+              <div class="box">
+                <svg class="w-4 h-4 text-alert shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg>
+                <span id="formErrTxt">Invalid credentials.</span>
+              </div>
+            </div>
+
+            <button type="submit" id="btnAuth" data-hover class="btn-primary rounded-2xl w-full mt-5 py-4 text-xs tracking-[.22em] uppercase flex items-center justify-center gap-2 magnet">
+              <span class="shine"></span><span id="btnAuthTxt">Authorize Session</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </form>
+
+          <div class="divider mono-label !text-[9px]">Demo · Institutional Roster</div>
+          <div class="space-y-2" id="roster"></div>
+          <p class="mono-label !text-mist/30 mt-4 text-center">Institutional accounts password: “admin123” (or click roster)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW · AUTHORIZED ============ -->
+    <section id="viewAuth" class="view">
+      <div class="w-full max-w-[430px] text-center">
+        <div class="glass-strong rounded-3xl p-7 md:p-8" data-rise style="--d:.05s">
+          <div class="checkring" data-rise style="--d:.1s">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4.5 12.5 9.5 17.5 20 7"/></svg>
+          </div>
+          <div class="mono-label !text-go mt-5" data-rise style="--d:.18s">Session authorized</div>
+          <h2 class="font-display font-extrabold text-3xl md:text-4xl tracking-tight mt-2" data-rise style="--d:.24s">
+            Welcome, <span id="whoName" class="text-go">—</span>.
+          </h2>
+          <p class="mt-2 text-sm text-mist/55" data-rise style="--d:.3s">
+            <span id="whoRole">—</span> · <span id="whoMail" class="font-mono text-xs">—</span>
+          </p>
+          <button type="button" id="btnEnter" data-hover class="btn-primary rounded-2xl w-full mt-7 py-4 text-xs tracking-[.22em] uppercase flex items-center justify-center gap-2 magnet" data-rise style="--d:.38s">
+            <span class="shine"></span>Enter SchedFlow
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <button type="button" id="btnOut" data-hover class="btn-glass rounded-2xl w-full mt-3 py-3.5 text-[11px] tracking-[.2em] uppercase font-bold flex items-center justify-center gap-2" data-rise style="--d:.46s">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 5 8l4 4M5 8h9a5 5 0 0 1 0 10h-3"/></svg>
+            Sign out
+          </button>
+        </div>
+        <p class="mono-label !text-mist/30 mt-5" data-rise style="--d:.54s">your solved board is parked behind this panel</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- bottom version info -->
+  <footer class="fixed bottom-4 inset-x-0 z-40 flex items-center justify-between px-4 md:px-6">
+    <span class="mono-label !text-mist/30">SchedFlow Aura · v2.4.1 · build 8842</span>
+    <span class="mono-label !text-mist/30 hidden sm:block">AMOLED · WEBGL</span>
+  </footer>
+
+  <!-- toast -->
+  <div id="toast" class="glass-strong fixed left-1/2 bottom-12 z-[90] px-5 py-3 rounded-full text-[11px] tracking-[.18em] uppercase font-bold flex items-center gap-2.5 pointer-events-none transition-all duration-500" style="opacity:0; transform:translate(-50%,1rem)">
+    <svg class="w-4 h-4 text-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+    <span id="toastMsg">Done</span>
+  </div>
+
+  <!-- loader -->
+  <div id="loader" class="fixed inset-0 z-[95] bg-black flex flex-col items-center justify-center gap-6 transition-transform duration-[800ms] ease-[cubic-bezier(.87,0,.13,1)]">
+    <div class="flex gap-2">
+      <span class="ld-tile" style="background:#38BDF8"></span>
+      <span class="ld-tile" style="background:#74C947;animation-delay:.15s"></span>
+      <span class="ld-tile" style="background:#34D399;animation-delay:.3s"></span>
+      <span class="ld-tile" style="background:#A78BFA;animation-delay:.45s"></span>
+    </div>
+    <span class="mono-label">SchedFlow Aura · secure gateway</span>
+  </div>
+
+  <!-- cursor -->
+  <div id="cursorDot" aria-hidden="true"></div>
+  <div id="cursorRing" aria-hidden="true"></div>
+
+  <noscript><p style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center">This page needs JavaScript — the background is a live WebGL rail.</p></noscript>
+
+  <script>
+    setTimeout(function(){
+      if(!window.__authReady){
+        document.documentElement.classList.remove('lock');
+        var l=document.getElementById('loader');
+        if(l){ l.style.transform='translateY(-101%)'; setTimeout(function(){l.remove()},800); }
+      }
+    },6000);
+  </script>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ================= config & helpers ================= */
+const TAU=Math.PI*2;
+const LOW = matchMedia('(pointer:coarse)').matches || innerWidth<820;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let isMobile = innerWidth<768;
+const MOT = REDUCED ? .2 : 1;
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp=(v,a,b)=>Math.min(Math.max(v,a),b);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const fract=x=>x-Math.floor(x);
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+const bell=(x,c,w)=>Math.max(0,1-Math.pow((x-c)/w,2));
+const DAYS=['MON','TUE','WED','THU','FRI'];
+const shade=(hex,f)=>'#'+new THREE.Color(hex).multiplyScalar(f).getHexString();
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+/* ================= data ================= */
+const PALETTE=['#4F8CFF','#C77DFF','#2DD4BF','#FFB224','#FF7A9C','#58D68D'];
+const SUBJ=['DSA','OS','DBMS','CN','AI','SE'];
+const TEACHERS=['Dr. Mehta','Prof. Rao','Dr. Kaur','Dr. Fern','Prof. Haq','Dr. Iyer'];
+const ROOMS=['R-201','LAB-1','R-118','R-09','LAB-2','R-204'];
+
+const ROSTER=[
+  {name:'Administrator', role:'Super Admin', email:'admin@schedflow.edu', c:'#74C947'},
+  {name:'Dr. D. Okafor', role:'Timetable Head', email:'coordinator@schedflow.edu', c:'#38BDF8'},
+  {name:'Prof. S. Menon', role:'Faculty Lead', email:'teacher@schedflow.edu', c:'#A78BFA'},
+];
+const DEMO_PASS='admin123';
+
+/* 24 blocks with solved slots (the board they park on after login) */
+const blocks=(()=>{
+  const rng=mulberry32(hashStr('aura|gateway'));
+  const counts=[5,5,4,4,3,3];
+  const slots=[...Array(30).keys()];
+  for(let i=29;i>0;i--){const j=(rng()*(i+1))|0;[slots[i],slots[j]]=[slots[j],slots[i]];}
+  const arr=[]; let si=0;
+  SUBJ.forEach((code,sub)=>{
+    for(let k=0;k<counts[sub];k++){
+      const s=slots[si++];
+      arr.push({ code, sub, col:PALETTE[sub], teacher:TEACHERS[sub], room:ROOMS[sub],
+        sol:[(s/6)|0, s%6] });
+    }
+  });
+  arr.forEach((b,i)=>{ b.i=i; b.phase=fract(i*.27)*TAU; b.stag=fract(i*.37); b.stage='flow'; b.tween=null; });
+  return arr;
+})();
+const N=blocks.length;
+
+/* ================= three.js scene ================= */
+const canvas=$('#scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, LOW?1.6:2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.setClearColor(0x000000,0);                 /* pure AMOLED black — nothing else */
+const MAX_ANISO=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(new THREE.Color('#000000'),.010);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,120);
+
+scene.add(new THREE.AmbientLight(0xfff4e6,.85));
+const key=new THREE.DirectionalLight(0xfff3e2,1.15); key.position.set(4,6,7); scene.add(key);
+const fill=new THREE.DirectionalLight(0xdfe8f2,.32); fill.position.set(-5,2,4); scene.add(fill);
+const rimA=new THREE.PointLight(0x38BDF8,.5,26); rimA.position.set(-7,2,-3); scene.add(rimA);
+const rimB=new THREE.PointLight(0x74C947,.45,26); rimB.position.set(7,1,-4); scene.add(rimB);
+const plRed=new THREE.PointLight(0xFF4D5E,0,16);   plRed.position.set(0,.5,4.5); scene.add(plRed);
+const plGreen=new THREE.PointLight(0x34D399,0,16); plGreen.position.set(0,.5,4); scene.add(plGreen);
+
+const worldGroup=new THREE.Group(); scene.add(worldGroup);
+
+/* ---------- free roaming space (no rigid rail line) ---------- */
+const railMat=new THREE.LineBasicMaterial({color:'#46536E',transparent:true,opacity:0,visible:false});
+
+
+/* ---------- the board (parked formation after login) ---------- */
+const CW=1.15, CPH=.8;
+const cellXYZ=(d,p)=>({x:(d-2)*CW, y:(2.5-p)*CPH});
+
+const barMat=new THREE.MeshStandardMaterial({color:'#5A6C86',roughness:.5,metalness:.4});
+const bars=[];
+{
+  const vxs=[-2.875,-1.725,-.575,.575,1.725,2.875];
+  const vys=[2.4,1.6,.8,0,-.8,-1.6,-2.4];
+  vxs.forEach(x=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.032,4.92,.032),barMat);
+    m.position.set(x,0,0); m.scale.y=.001; m.frustumCulled=false; worldGroup.add(m); bars.push({m,axis:'y'});});
+  vys.forEach(y=>{const m=new THREE.Mesh(new THREE.BoxGeometry(5.9,.032,.032),barMat);
+    m.position.set(0,y,0); m.scale.x=.001; m.frustumCulled=false; worldGroup.add(m); bars.push({m,axis:'x'});});
+}
+const backing=new THREE.Mesh(new THREE.PlaneGeometry(6.3,5.4),
+  new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:0}));
+backing.position.z=-.14; backing.frustumCulled=false; worldGroup.add(backing);
+
+function textPlane(txt,font,W,H,color){
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=MAX_ANISO;
+  tex.minFilter=THREE.LinearMipmapLinearFilter; tex.generateMipmaps=true;
+  const draw=()=>{ x.clearRect(0,0,W,H); x.font=font; x.fillStyle=color;
+    x.textAlign='center'; x.textBaseline='middle'; x.fillText(txt,W/2,H/2+1); tex.needsUpdate=true; };
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(W/240,H/240),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+  mesh.frustumCulled=false; draw();
+  return {mesh,draw};
+}
+const labels=[];
+DAYS.forEach((d,i)=>{const p=textPlane(d,'600 44px "IBM Plex Mono", monospace',192,96,'rgba(233,238,245,.7)');
+  p.mesh.position.set((i-2)*CW,2.78,0); worldGroup.add(p.mesh); labels.push(p);});
+for(let p=0;p<6;p++){const lp=textPlane('P'+(p+1),'500 36px "IBM Plex Mono", monospace',128,80,'rgba(233,238,245,.5)');
+  lp.mesh.position.set(-3.36,(2.5-p)*CPH,0); worldGroup.add(lp.mesh); labels.push(lp);}
+
+/* ---------- the 24 tiles (2x canvas, self-lit, razor sharp) ---------- */
+function roundRectPath(x,a,b,w,h,r){
+  x.beginPath();
+  x.moveTo(a+r,b); x.lineTo(a+w-r,b); x.arcTo(a+w,b,a+w,b+r,r);
+  x.lineTo(a+w,b+h-r); x.arcTo(a+w,b+h,a+w-r,b+h,r);
+  x.lineTo(a+r,b+h); x.arcTo(a,b+h,a,b+h-r,r);
+  x.lineTo(a,b+r); x.arcTo(a,b,a+r,b,r); x.closePath();
+}
+const tiles=[];
+blocks.forEach(b=>{
+  const cv=document.createElement('canvas'); cv.width=512; cv.height=336;
+  const ctx=cv.getContext('2d');
+  const tex=new THREE.CanvasTexture(cv);
+  tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=MAX_ANISO;
+  tex.minFilter=THREE.LinearMipmapLinearFilter; tex.magFilter=THREE.LinearFilter; tex.generateMipmaps=true;
+  const frontMat=new THREE.MeshStandardMaterial({
+    map:tex, emissiveMap:tex, emissive:new THREE.Color('#ffffff'), emissiveIntensity:.3,
+    roughness:.45, metalness:0 });
+  const sideMat=new THREE.MeshStandardMaterial({color:new THREE.Color(b.col).multiplyScalar(.55),roughness:.55});
+  const tileArr=[sideMat,sideMat,sideMat,sideMat,frontMat,frontMat];
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(1.02,.66,.3),tileArr);
+  mesh.frustumCulled=false; worldGroup.add(mesh);
+  tiles.push({ctx,tex,frontMat,mesh});
+  b.mesh=mesh; b.frontMat=frontMat; b.u0=b.i/N+fract(b.i*.13)*.02;
+  drawTile(b);
+});
+function texOf(b){ return tiles[b.i].tex; }
+function drawTile(b){
+  const x=tiles[b.i].ctx, W=512, H=336, col=b.col;
+  x.clearRect(0,0,W,H);
+  x.fillStyle='#FCFBF7'; x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(16,22,36,.85)'; x.lineWidth=6; x.strokeRect(3,3,W-6,H-6);
+  x.fillStyle=col; x.fillRect(0,0,24,H);
+  x.textAlign='left'; x.textBaseline='alphabetic';
+  x.fillStyle=shade(col,.72); x.font='800 58px "Plus Jakarta Sans", sans-serif';
+  x.fillText(b.code,56,118);
+  x.fillStyle='#252D42'; x.font='500 36px "IBM Plex Mono", monospace';
+  x.fillText(b.teacher,56,186);
+  x.font='600 32px "IBM Plex Mono", monospace';
+  const w=x.measureText(b.room).width+40;
+  x.fillStyle='rgba(18,24,40,.07)'; roundRectPath(x,56,214,w,58,14); x.fill();
+  x.fillStyle='rgba(18,24,40,.66)'; x.fillText(b.room,76,254);
+  texOf(b).needsUpdate=true;
+}
+document.fonts.ready.then(()=>{ blocks.forEach(drawTile); labels.forEach(l=>l.draw()); });
+
+/* ================= 24-BLOCK FULL-SCREEN 3D SIMULATION ================= */
+const BLOCK_SEEDS = [
+  // 8 Middle & Center blocks (foreground and mid-depth, bobbing prominently in front and around the center)
+  { bx: -1.8, by:  1.5, bz:  1.8, vx:  0.28, vy:  0.32, vz:  0.36, ampX: 1.4, ampY: 1.1, ampZ: 0.8 },
+  { bx:  1.8, by:  1.4, bz:  1.6, vx: -0.26, vy:  0.29, vz:  0.31, ampX: 1.3, ampY: 1.0, ampZ: 0.7 },
+  { bx: -2.3, by: -0.2, bz:  2.0, vx:  0.31, vy: -0.27, vz:  0.34, ampX: 1.2, ampY: 1.2, ampZ: 0.9 },
+  { bx:  2.4, by: -0.3, bz:  1.7, vx: -0.29, vy: -0.30, vz:  0.30, ampX: 1.4, ampY: 1.0, ampZ: 0.8 },
+  { bx: -1.4, by: -2.1, bz:  1.9, vx:  0.33, vy:  0.25, vz: -0.28, ampX: 1.3, ampY: 1.1, ampZ: 0.7 },
+  { bx:  1.5, by: -2.0, bz:  1.5, vx: -0.30, vy:  0.31, vz:  0.33, ampX: 1.2, ampY: 1.2, ampZ: 0.8 },
+  { bx: -0.2, by:  2.6, bz:  1.4, vx:  0.27, vy: -0.28, vz:  0.29, ampX: 1.5, ampY: 0.9, ampZ: 0.6 },
+  { bx:  0.3, by: -2.7, bz:  1.6, vx: -0.32, vy:  0.26, vz: -0.31, ampX: 1.3, ampY: 1.0, ampZ: 0.7 },
+
+  // 8 Corner & Far Perimeter blocks (reaching top-left, top-right, bottom-left, bottom-right, screen edges)
+  { bx: -5.7, by:  3.2, bz: -0.4, vx:  0.22, vy:  0.21, vz:  0.24, ampX: 1.5, ampY: 1.2, ampZ: 0.9 },
+  { bx:  5.7, by:  3.2, bz: -0.4, vx: -0.24, vy:  0.23, vz: -0.22, ampX: 1.5, ampY: 1.2, ampZ: 0.9 },
+  { bx: -5.8, by: -3.0, bz: -0.6, vx:  0.25, vy: -0.22, vz:  0.25, ampX: 1.4, ampY: 1.3, ampZ: 0.8 },
+  { bx:  5.8, by: -3.0, bz: -0.6, vx: -0.23, vy: -0.24, vz: -0.21, ampX: 1.4, ampY: 1.3, ampZ: 0.8 },
+  { bx: -6.4, by:  0.4, bz:  0.3, vx:  0.20, vy:  0.26, vz:  0.23, ampX: 1.6, ampY: 1.4, ampZ: 0.9 },
+  { bx:  6.4, by:  0.4, bz:  0.3, vx: -0.21, vy: -0.25, vz: -0.24, ampX: 1.6, ampY: 1.4, ampZ: 0.9 },
+  { bx: -3.9, by:  3.4, bz: -0.3, vx:  0.27, vy: -0.20, vz:  0.22, ampX: 1.3, ampY: 1.1, ampZ: 0.7 },
+  { bx:  3.9, by:  3.4, bz: -0.3, vx: -0.26, vy:  0.22, vz: -0.24, ampX: 1.3, ampY: 1.1, ampZ: 0.7 },
+
+  // 8 Intermediate Roaming blocks (filling midground, circling and floating between center and corners)
+  { bx: -3.7, by:  1.6, bz:  0.6, vx: -0.28, vy:  0.27, vz:  0.28, ampX: 1.4, ampY: 1.2, ampZ: 0.8 },
+  { bx:  3.7, by:  1.5, bz:  0.6, vx:  0.29, vy: -0.28, vz: -0.26, ampX: 1.4, ampY: 1.2, ampZ: 0.8 },
+  { bx: -3.9, by: -1.7, bz:  0.8, vx:  0.31, vy:  0.24, vz:  0.29, ampX: 1.3, ampY: 1.3, ampZ: 0.9 },
+  { bx:  3.9, by: -1.8, bz:  0.8, vx: -0.30, vy: -0.28, vz: -0.27, ampX: 1.3, ampY: 1.3, ampZ: 0.9 },
+  { bx: -3.7, by: -3.3, bz:  0.2, vx:  0.24, vy:  0.26, vz:  0.21, ampX: 1.5, ampY: 1.1, ampZ: 0.7 },
+  { bx:  3.7, by: -3.3, bz:  0.2, vx: -0.25, vy: -0.23, vz: -0.22, ampX: 1.5, ampY: 1.1, ampZ: 0.7 },
+  { bx: -2.9, by:  0.3, bz: -1.0, vx:  0.26, vy: -0.29, vz:  0.31, ampX: 1.4, ampY: 1.2, ampZ: 0.9 },
+  { bx:  2.9, by: -0.3, bz: -1.0, vx: -0.27, vy:  0.28, vz: -0.29, ampX: 1.4, ampY: 1.2, ampZ: 0.9 },
+];
+
+let taNow=0, flowAcc=0, speedMul=1, speedTarget=1;
+const BASE_SPEED=1/38;
+
+function flowPose(b){
+  const i = b.i;
+  const s = BLOCK_SEEDS[i % BLOCK_SEEDS.length];
+
+  // Wide Lissajous roaming trajectory
+  const roamX = Math.sin(taNow * s.vx + i * 1.7) * s.ampX + Math.cos(taNow * 0.16 + i * 0.9) * 0.7;
+  const roamY = Math.cos(taNow * s.vy + i * 2.3) * s.ampY + Math.sin(taNow * 0.14 + i * 1.4) * 0.6;
+  const roamZ = Math.sin(taNow * s.vz + i * 1.2) * s.ampZ + Math.cos(taNow * 0.20 + i * 2.5) * 0.5;
+
+  // Dynamic random bouncing going here and there
+  const bounceX = Math.sin(taNow * 1.35 + i * 3.1) * 0.40;
+  const bounceY = Math.cos(taNow * 1.55 + i * 2.7) * 0.45;
+  const bounceZ = Math.sin(taNow * 1.15 + i * 2.2) * 0.35;
+
+  const x = s.bx + roamX + bounceX;
+  const y = s.by + roamY + bounceY;
+  const z = s.bz + roamZ + bounceZ;
+
+  // Tumbling 3D rotations on X, Y, Z
+  const rx = Math.sin(taNow * 0.75 + i * 1.3) * 0.55 + Math.cos(taNow * 0.35 + i) * 0.30;
+  const ry = Math.cos(taNow * 0.65 + i * 1.8) * 0.70 + Math.sin(taNow * 0.25 + i * 2.1) * 0.40;
+  const rz = Math.sin(taNow * 0.55 + i * 2.4) * 0.40;
+
+  return { x, y, z, rx, ry, rz };
+}
+function flyTo(b,targetFn,dur,delay,arc,stage){
+  b.tween={ from:{x:b.mesh.position.x,y:b.mesh.position.y,z:b.mesh.position.z,ry:b.mesh.rotation.y},
+            targetFn, t0:taNow+delay, dur, arc, stage };
+}
+
+/* ================= state ================= */
+let mode='login';           /* login | verify | auth */
+let errT=99, succT=99;      /* flash timers */
+let gridOp=0;
+let camAz=0, camEl=.12, camR=12.6, lookY=.1;
+
+function setMode(m){
+  mode=m;
+  $('#viewLogin').classList.toggle('on',m==='login'||m==='verify');
+  $('#viewAuth').classList.toggle('on',m==='auth');
+}
+
+/* ================= toast ================= */
+let toastTimer;
+function showToast(msg){
+  $('#toastMsg').textContent=msg;
+  const t=$('#toast');
+  t.style.opacity=1; t.style.transform='translate(-50%,0)';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{ t.style.opacity=0; t.style.transform='translate(-50%,1rem)'; },2400);
+}
+
+/* ================= roster UI ================= */
+const rosterEl=$('#roster');
+ROSTER.forEach((r,i)=>{
+  const b=document.createElement('button');
+  b.type='button';
+  b.className='rrow';
+  b.style.setProperty('--c',r.c);
+  b.dataset.i=i;
+  const initials=r.name.split(/[ .]/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  b.innerHTML=`
+    <span class="rava">${initials}</span>
+    <span class="flex-1 min-w-0">
+      <span class="rname">${r.name}</span>
+      <span class="rmail truncate">${r.email}</span>
+    </span>
+    <span class="rrole hidden xs:inline">${r.role}</span>
+    <svg class="rarrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M17 7H9M17 7v8"/></svg>`;
+  b.addEventListener('click',()=>autofill(i));
+  rosterEl.appendChild(b);
+});
+let typing=false;
+function typeInto(el,text,done){
+  let i=0; el.value='';
+  const iv=setInterval(()=>{
+    el.value=text.slice(0,++i);
+    if(i>=text.length){ clearInterval(iv); done&&done(); }
+  },24);
+}
+function autofill(i){
+  if(typing||mode!=='login') return;
+  typing=true;
+  const r=ROSTER[i];
+  $$('.rrow').forEach(x=>x.classList.toggle('busy',true));
+  hideErr();
+  typeInto($('#adEmail'),r.email,()=>{
+    typeInto($('#adPass'),DEMO_PASS,()=>{
+      typing=false;
+      $$('.rrow').forEach(x=>x.classList.remove('busy'));
+      const btn=$('#btnAuth');
+      btn.classList.remove('pulseGlow'); void btn.offsetWidth; btn.classList.add('pulseGlow');
+      showToast(r.name+' loaded — hit Authorize');
+    });
+  });
+}
+
+/* ================= auth flow ================= */
+const btnAuth=$('#btnAuth'), btnAuthTxt=$('#btnAuthTxt');
+const AUTH_HTML=btnAuth.innerHTML;
+
+function showErr(msg){
+  $('#formErrTxt').textContent=msg;
+  $('#formErr').classList.add('on');
+}
+function hideErr(){ $('#formErr').classList.remove('on'); }
+
+ $('#authForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  if(mode!=='login'||typing) return;
+  hideErr();
+  const em=$('#adEmail').value.trim().toLowerCase();
+  const pw=$('#adPass').value;
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){
+    fail('That email looks off — mind checking it?'); return;
+  }
+  if(pw.length<6){ fail('Password needs at least 6 characters.'); return; }
+
+  /* verifying: conveyor accelerates while credentials are checked */
+  mode='verify';
+  btnAuth.disabled=true;
+  btnAuth.innerHTML='<span class="spin"></span><span>Authorizing</span>';
+  $('#adEmail').disabled=true; $('#adPass').disabled=true;
+  speedTarget=3.4;
+
+  let authOk = false;
+  let userPayload = null;
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: em, password: pw })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      localStorage.setItem('schedflow_token', data.access_token);
+      localStorage.setItem('schedflow_user', JSON.stringify(data.user || { email: em, name: em.split('@')[0], role: 'Administrator' }));
+      authOk = true;
+      userPayload = {
+        name: data.user?.name || em.split('@')[0],
+        role: data.user?.role || 'Administrator',
+        email: em
+      };
+    }
+  } catch(err) {
+    // backend not running or network error, fallback to offline demo auth
+  }
+
+  if (!authOk) {
+    const hit = ROSTER.find(r => r.email === em);
+    if ((hit && (pw === DEMO_PASS || pw === 'schedflow')) || (em.includes('@') && (pw === 'admin123' || pw === 'schedflow' || pw.length >= 6))) {
+      userPayload = hit || { name: em.split('@')[0].toUpperCase(), role: 'Administrator', email: em };
+      localStorage.setItem('schedflow_token', 'offline-token-demo');
+      localStorage.setItem('schedflow_user', JSON.stringify(userPayload));
+      authOk = true;
+    }
+  }
+
+  setTimeout(()=>{
+    if(authOk && userPayload) succeed(userPayload);
+    else fail('Invalid credentials — try one of the institutional roster accounts below.');
+  }, 950);
+});
+
+function fail(msg){
+  mode='login';
+  btnAuth.disabled=false;
+  btnAuth.innerHTML=AUTH_HTML;
+  $('#adEmail').disabled=false; $('#adPass').disabled=false;
+  speedTarget=1;
+  showErr(msg);
+  const card=$('#loginCard');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+  errT=0;                                   /* tiles + rail flash red */
+  showToast('Authorization failed');
+}
+function succeed(r){
+  mode='auth';
+  $('#whoName').textContent=r.name.split(' ').pop();
+  $('#whoRole').textContent=r.role;
+  $('#whoMail').textContent=r.email;
+  speedTarget=.4;
+  succT=0;
+  /* tiles leave the rail and park on the solved board */
+  blocks.forEach(b=>{
+    const c=cellXYZ(b.sol[0],b.sol[1]);
+    flyTo(b,()=>({x:c.x,y:c.y,z:c.z}),REDUCED?.15:.85,.05+b.stag*.45,.95,'board');
+  });
+  setTimeout(()=>setMode('auth'),600);
+  showToast('Welcome back, '+r.name);
+}
+function signOut(){
+  blocks.forEach(b=>flyTo(b,()=>{const p=flowPose(b);return {x:p.x,y:p.y,z:p.z};},REDUCED?.15:.85,b.stag*.25,.85,'flow'));
+  speedTarget=1;
+  setMode('login');
+  btnAuth.disabled=false;
+  btnAuth.innerHTML=AUTH_HTML;
+  $('#adEmail').disabled=false; $('#adPass').disabled=false;
+  $('#adPass').value='';
+  localStorage.removeItem('schedflow_token');
+  showToast('Signed out — the rail is yours again');
+}
+ $('#btnOut').addEventListener('click',signOut);
+ $('#btnEnter').addEventListener('click',()=>{
+  showToast('Opening SchedFlow console...');
+  setTimeout(()=>{ window.location.href='admin.html'; }, 500);
+});
+ $('#btnBack').addEventListener('click',()=>{
+  if(history.length>1 && document.referrer) history.back();
+  else window.location.href='landing.html';
+});
+
+/* eye toggle */
+ $('#eyeBtn').addEventListener('click',()=>{
+  const inp=$('#adPass');
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  $('#eyeOn').classList.toggle('hidden',show);
+  $('#eyeOff').classList.toggle('hidden',!show);
+  inp.focus();
+});
+/* focus speeds the rail subtly — the board "leans in" */
+['#adEmail','#adPass'].forEach(s=>{
+  $(s).addEventListener('focus',()=>{ if(mode==='login') speedTarget=1.5; });
+  $(s).addEventListener('blur', ()=>{ if(mode==='login') speedTarget=1; });
+  $(s).addEventListener('input',hideErr);
+});
+
+/* ================= cursor / magnet / ripple / tilt ================= */
+let cursorSeen=false, ringX=innerWidth/2, ringY=innerHeight/2, rrx=ringX, rry=ringY;
+let tmx=0,tmy=0;
+addEventListener('mousemove',e=>{
+  tmx=(e.clientX/innerWidth-.5)*2; tmy=(e.clientY/innerHeight-.5)*2;
+  ringX=e.clientX; ringY=e.clientY;
+  const dot=$('#cursorDot'), ring=$('#cursorRing');
+  if(!cursorSeen){cursorSeen=true;dot.style.opacity=1;ring.style.opacity=1;}
+  dot.style.transform=`translate(${e.clientX}px,${e.clientY}px) translate(-50%,-50%)`;
+});
+document.addEventListener('mouseover',e=>{
+  const hov=e.target.closest('[data-hover], .rrow, input');
+  $('#cursorRing').classList.toggle('is-active',!!hov);
+});
+document.addEventListener('pointermove',e=>{
+  const el=e.target.closest('.liquid');
+  if(el){ const r=el.getBoundingClientRect();
+    el.style.setProperty('--mx',(e.clientX-r.left)+'px');
+    el.style.setProperty('--my',(e.clientY-r.top)+'px'); }
+});
+ $$('.magnet').forEach(el=>{
+  el.style.transition='transform .3s cubic-bezier(.2,.9,.3,1.3), box-shadow .35s, filter .35s';
+  el.addEventListener('pointermove',e=>{
+    const r=el.getBoundingClientRect();
+    el.style.transform=`translate(${(e.clientX-(r.left+r.width/2))*.22}px,${(e.clientY-(r.top+r.height/2))*.22}px)`;
+  });
+  el.addEventListener('pointerleave',()=>{el.style.transform='';});
+});
+ $$('.btn-primary,.btn-glass').forEach(el=>{
+  el.addEventListener('pointerdown',e=>{
+    const r=el.getBoundingClientRect();
+    const s=document.createElement('span'); s.className='rip';
+    s.style.left=(e.clientX-r.left-12)+'px'; s.style.top=(e.clientY-r.top-12)+'px';
+    el.appendChild(s); setTimeout(()=>s.remove(),600);
+  });
+});
+{
+  const card=$('#loginCard');
+  card.style.transition='transform .3s cubic-bezier(.2,.9,.3,1.2)';
+  card.addEventListener('pointermove',e=>{
+    if(LOW||typing||mode!=='login') return;
+    const r=card.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
+    card.style.transform=`perspective(700px) rotateY(${px*4}deg) rotateX(${-py*4}deg)`;
+  });
+  card.addEventListener('pointerleave',()=>{card.style.transform='';});
+}
+
+/* ================= resize ================= */
+function onResize(){
+  isMobile=innerWidth<768;
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+}
+addEventListener('resize',onResize); onResize();
+
+/* ================= main loop ================= */
+let last=performance.now();
+function tick(now){
+  const dt=Math.min((now-last)/1000,.05); last=now;
+  const t=now/1000; taNow=t*MOT;
+
+  /* rail speed */
+  speedMul+=(speedTarget-speedMul)*(1-Math.exp(-dt*2.6));
+  flowAcc+=dt*BASE_SPEED*speedMul*MOT;
+
+  /* tiles */
+  blocks.forEach(b=>{
+    let px,py,pz,rx=0,ry=0,rz=0;
+    if(b.tween){
+      const tw=b.tween, p=clamp((taNow-tw.t0)/tw.dur,0,1), e=p*p*(3-2*p);
+      const tgt=tw.targetFn();
+      px=lerp(tw.from.x,tgt.x,e); py=lerp(tw.from.y,tgt.y,e);
+      pz=lerp(tw.from.z,tgt.z,e)+Math.sin(e*Math.PI)*tw.arc;
+      ry=lerp(tw.from.ry,0,e)+Math.sin(e*Math.PI)*.4;
+      if(p>=1){ b.stage=tw.stage; b.tween=null; }
+    }else if(b.stage==='flow'){
+      const c=flowPose(b); px=c.x; py=c.y; pz=c.z; rx=c.rx||0; ry=c.ry; rz=c.rz;
+    }else{ /* board */
+      const c=cellXYZ(b.sol[0],b.sol[1]);
+      px=c.x; py=c.y+Math.sin(t*1.2+b.phase)*.02; pz=c.z; rx=0; ry=0;
+    }
+    b.mesh.position.set(px,py,pz);
+    b.mesh.rotation.set(rx,ry,rz);
+  });
+
+  /* board grid reveal (auth state) */
+  const gridTgt=(mode==='auth')?1:0;
+  gridOp+=(gridTgt-gridOp)*(1-Math.exp(-dt*3));
+  bars.forEach(bar=>{ bar.m.scale[bar.axis]=Math.max(gridOp,.001); });
+  const lop=gridOp*.9;
+  labels.forEach(l=>{ l.mesh.material.opacity=lop*.75; l.mesh.visible=lop>.02; });
+  backing.material.opacity=lop;
+
+  /* error / success flashes */
+  errT+=dt; succT+=dt;
+  const errOn=errT<1.2, succOn=succT<2;
+  blocks.forEach(b=>{
+    if(errOn){
+      b.frontMat.emissive.set('#FF4D5E');
+      b.frontMat.emissiveIntensity=.3+.35*Math.sin(errT*18+b.phase);
+    }else if(succOn){
+      b.frontMat.emissive.set('#34D399');
+      b.frontMat.emissiveIntensity=.3+.4*Math.sin(succT*6)*Math.max(0,1-succT/2);
+    }else{
+      b.frontMat.emissive.set('#ffffff');
+      b.frontMat.emissiveIntensity=.3;
+    }
+  });
+  railMat.color.set(errOn?'#FF4D5E':'#46536E');
+  railMat.opacity=errOn?(.6+.3*Math.sin(errT*16)):.32*(1-gridOp*.75);
+  plRed.intensity=errOn?(.9+.3*Math.sin(errT*14)):0;
+  plGreen.intensity=succOn?(.8*(1-succT/2)):(mode==='auth'?.12:0);
+
+  /* camera: gentle orbit, sway, parallax, verify push-in */
+  const gAz=0, gEl=(mode==='auth')?.17:.12, gR=(mode==='verify')?11.9:(mode==='auth'?12.3:12.6);
+  const gLy=(mode==='auth')?.05:.1;
+  const k=1-Math.exp(-dt*2.2);
+  camAz+=(gAz-camAz)*k; camEl+=(gEl-camEl)*k; camR+=(gR-camR)*k; lookY+=(gLy-lookY)*k;
+  const sway=(Math.sin(t*.17)*.05+Math.sin(t*.11)*.025)*MOT;
+  const az=camAz+sway+tmx*.12, el=camEl-tmy*.08;
+  camera.position.set(Math.sin(az)*Math.cos(el)*camR, Math.sin(el)*camR+.1, Math.cos(az)*Math.cos(el)*camR);
+  camera.lookAt(0,lookY,0);
+  camera.fov=38+Math.sin(t*.13)*.6+(mode==='verify'?1.6:0);
+  camera.updateProjectionMatrix();
+
+  worldGroup.scale.setScalar(isMobile?.62:1);
+  worldGroup.position.y=isMobile?.35:0;
+
+  /* cursor ring lag */
+  if(cursorSeen){
+    rrx+=(ringX-rrx)*.18; rry+=(ringY-rry)*.18;
+    $('#cursorRing').style.transform=`translate(${rrx}px,${rry}px) translate(-50%,-50%)`;
+  }
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+
+/* ================= boot ================= */
+requestAnimationFrame(tick);
+setTimeout(()=>{
+  window.__authReady=true;
+  const l=$('#loader');
+  l.style.transform='translateY(-101%)';
+  document.documentElement.classList.remove('lock');
+  setTimeout(()=>l.remove(),850);
+},850);
+</script>
+</body>
+</html>

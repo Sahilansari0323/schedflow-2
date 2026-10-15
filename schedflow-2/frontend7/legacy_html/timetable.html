@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en" class="lock">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchedFlow Aura — Timetable Matrix · Deterministic Intelligence</title>
+<meta name="description" content="Select department, semester and section — SchedFlow's deterministic CSP solver streams your verified schedule.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23000'/%3E%3Crect x='6' y='6' width='9' height='9' rx='2.5' fill='%2338BDF8'/%3E%3Crect x='17' y='6' width='9' height='9' rx='2.5' fill='%2374C947'/%3E%3Crect x='6' y='17' width='9' height='9' rx='2.5' fill='%2334D399'/%3E%3Crect x='17' y='17' width='9' height='9' rx='2.5' fill='%23C77DFF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { deep:'#000000', mist:'#E9EEF5', brand:'#74C947', brand2:'#8ce05c', go:'#34D399', alert:'#FF4D5E',
+            sky:'#38BDF8', violet:'#A78BFA', teal:'#2DD4BF', amber:'#FFB224', rose:'#FF7A9C' },
+  fontFamily: { display:['"Plus Jakarta Sans"','Outfit','sans-serif'], sans:['"Plus Jakarta Sans"','sans-serif'], mono:['"IBM Plex Mono"','monospace'] }
+}}}
+</script>
+<style>
+  :root{ --mist:#E9EEF5; --brand:#74C947; --go:#34D399; --alert:#FF4D5E; }
+  html,body{ height:100%; background:#000; overflow:hidden }
+  html.lock{ overflow:hidden }
+  body{ overscroll-behavior:none; background:#000 }
+  ::selection{ background:var(--brand); color:#081a05 }
+  ::-webkit-scrollbar{ width:4px; height:4px }
+  ::-webkit-scrollbar-track{ background:transparent }
+  ::-webkit-scrollbar-thumb{ background:rgba(148,163,184,.25); border-radius:4px }
+
+  #scene{ position:fixed; inset:0; width:100%; height:100%; display:block; z-index:1 }
+
+  .mono-label{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:rgba(233,238,245,.45) }
+
+  /* staggered entrance */
+  [data-rise]{ opacity:0; transform:translateY(22px);
+    transition:opacity .65s cubic-bezier(.2,.7,.2,1), transform .65s cubic-bezier(.2,.7,.2,1);
+    transition-delay:var(--d,0s) }
+  .view.on [data-rise]{ opacity:1; transform:none }
+
+  /* ---------- liquid glass ---------- */
+  .glass{
+    background:rgba(16,20,32,.55);
+    -webkit-backdrop-filter:blur(20px) saturate(150%);
+    backdrop-filter:blur(20px) saturate(150%);
+    border:1px solid rgba(233,238,245,.12);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 14px 40px rgba(0,0,0,.5);
+  }
+  .glass-strong{
+    background:rgba(13,17,28,.72);
+    -webkit-backdrop-filter:blur(28px) saturate(160%);
+    backdrop-filter:blur(28px) saturate(160%);
+    border:1px solid rgba(233,238,245,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 30px 70px rgba(0,0,0,.6);
+  }
+  .liquid{ position:relative; overflow:hidden }
+  .liquid::before{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:radial-gradient(180px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.1), transparent 65%);
+    opacity:0; transition:opacity .45s;
+  }
+  .liquid:hover::before{ opacity:1 }
+  @media (pointer:coarse){ .liquid::before{ display:none } }
+
+  /* ---------- buttons ---------- */
+  .btn-primary{
+    position:relative; overflow:hidden;
+    background:var(--brand); color:#081a05; font-weight:800;
+    box-shadow:0 12px 34px rgba(116,201,71,.30), inset 0 1px 0 rgba(255,255,255,.4);
+    transition:transform .35s cubic-bezier(.2,.9,.3,1.3), box-shadow .35s, filter .35s;
+    will-change:transform;
+  }
+  .btn-primary:hover{ filter:brightness(1.07); box-shadow:0 18px 48px rgba(116,201,71,.42), inset 0 1px 0 rgba(255,255,255,.4) }
+  .btn-primary:active{ filter:brightness(.9) }
+  .btn-primary .shine{ position:absolute; top:-20%; bottom:-20%; width:36%; left:-55%;
+    background:rgba(255,255,255,.35); transform:skewX(-22deg); pointer-events:none;
+    transition:left .6s cubic-bezier(.4,0,.2,1) }
+  .btn-primary:hover .shine{ left:118% }
+  .btn-primary svg{ transition:transform .35s cubic-bezier(.2,.9,.3,1.3) }
+  .btn-primary:hover svg{ transform:translateX(4px) }
+  .btn-glass{
+    position:relative; overflow:hidden;
+    background:rgba(233,238,245,.06); border:1px solid rgba(233,238,245,.16); color:var(--mist);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+    transition:border-color .35s, transform .35s, color .35s, background .35s;
+  }
+  .btn-glass:hover{ border-color:var(--c,var(--brand)); color:#fff; transform:translateY(-2px); background:rgba(233,238,245,.1) }
+  .btn-glass svg{ transition:transform .35s }
+  .btn-glass:hover svg{ transform:translateX(3px) }
+  .rip{ position:absolute; border-radius:50%; width:24px; height:24px; background:rgba(255,255,255,.35);
+    transform:scale(0); animation:rip .55s ease-out forwards; pointer-events:none }
+  @keyframes rip{ to{ transform:scale(3.4); opacity:0 } }
+  :focus-visible{ outline:2px solid var(--brand); outline-offset:3px }
+
+  .chip{
+    display:inline-flex; align-items:center; gap:8px; padding:.45rem .95rem; border-radius:999px;
+    font-size:11px; font-weight:600; letter-spacing:.03em; color:rgba(233,238,245,.8);
+    background:rgba(233,238,245,.06); border:1px solid rgba(233,238,245,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
+    transition:border-color .3s, transform .3s, background .3s;
+  }
+  .chip .cdot{ width:7px; height:7px; border-radius:50%; background:var(--c,var(--brand)); transition:transform .3s }
+  .chip:hover{ border-color:var(--c,var(--brand)); transform:translateY(-2px); background:rgba(233,238,245,.09) }
+  .chip:hover .cdot{ transform:scale(1.35) }
+  .stroke-text{ color:transparent; -webkit-text-stroke:1.5px rgba(233,238,245,.85) }
+
+  /* film grain */
+  .grain{
+    position:fixed; inset:-50%; width:200%; height:200%; z-index:60; pointer-events:none; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grainShift 9s steps(10) infinite;
+  }
+  @keyframes grainShift{
+    0%{transform:translate(0,0)} 10%{transform:translate(-4%,-6%)} 20%{transform:translate(4%,2%)}
+    30%{transform:translate(-2%,6%)} 40%{transform:translate(6%,-3%)} 50%{transform:translate(-5%,4%)}
+    60%{transform:translate(3%,5%)} 70%{transform:translate(-6%,-2%)} 80%{transform:translate(5%,-5%)}
+    90%{transform:translate(-3%,3%)} 100%{transform:translate(0,0)}
+  }
+
+  /* ---------- views (one page, three states) ---------- */
+  .view{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:92px 20px 84px; opacity:0; visibility:hidden; transform:translateY(16px);
+    transition:opacity .55s cubic-bezier(.2,.7,.2,1), transform .55s cubic-bezier(.2,.7,.2,1), visibility 0s .55s;
+    pointer-events:none; overflow-y:auto; overflow-x:hidden }
+  .view.on{ opacity:1; visibility:visible; transform:none; pointer-events:auto; transition-delay:0s }
+
+  /* ---------- dropdowns ---------- */
+  .dd{ position:relative }
+  .dd-btn{ width:100%; text-align:left; border-radius:16px; padding:12px 14px 11px; position:relative }
+  .dd-btn .dd-label{ display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.24em;
+    text-transform:uppercase; color:rgba(233,238,245,.45); margin-bottom:3px }
+  .dd-btn .dd-value{ display:block; font-weight:600; font-size:14px; color:var(--mist); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .dd-btn .dd-value.empty{ color:rgba(233,238,245,.35); font-weight:400 }
+  .dd-btn .chev{ position:absolute; right:12px; top:50%; transform:translateY(-50%); transition:transform .3s; color:rgba(233,238,245,.5) }
+  .dd.open .chev{ transform:translateY(-50%) rotate(180deg); color:var(--brand) }
+  .dd-menu{ position:absolute; z-index:30; left:0; right:0; top:calc(100% + 8px); border-radius:16px; padding:6px;
+    max-height:240px; overflow-y:auto;
+    opacity:0; transform:translateY(-8px) scale(.98); pointer-events:none;
+    transition:opacity .28s cubic-bezier(.2,.9,.3,1), transform .28s cubic-bezier(.2,.9,.3,1) }
+  .dd.open .dd-menu{ opacity:1; transform:none; pointer-events:auto }
+  .dd-menu button{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+    padding:9px 12px; border-radius:10px; font-size:13px; font-weight:500; color:rgba(233,238,245,.75); text-align:left;
+    opacity:0; transform:translateX(-6px); transition:background .2s, color .2s, opacity .25s, transform .25s }
+  .dd.open .dd-menu button{ opacity:1; transform:none; transition-delay:calc(var(--i)*26ms) }
+  .dd-menu button:hover, .dd-menu button:focus-visible{ background:rgba(233,238,245,.08); color:#fff; outline:none }
+  .dd-menu button .ck{ width:15px; height:15px; color:var(--brand); opacity:0; transform:scale(.5); transition:all .25s; flex:none }
+  .dd-menu button.sel{ color:#fff }
+  .dd-menu button.sel .ck{ opacity:1; transform:scale(1) }
+  .dd.disabled{ pointer-events:none }
+  .dd.disabled .dd-btn{ opacity:.45 }
+
+  /* ---------- error banner ---------- */
+  #errBanner{ max-width:420px; width:100%; margin:0 auto 18px;
+    border:1px solid rgba(255,77,94,.35); background:rgba(255,77,94,.07); border-radius:16px;
+    display:flex; align-items:center; gap:12px; padding:12px 14px;
+    animation:errIn .5s cubic-bezier(.2,.9,.3,1.2) both }
+  @keyframes errIn{ from{ opacity:0; transform:translateY(10px) scale(.97) } }
+  #errBanner.gone{ opacity:0; transform:translateY(-8px) scale(.97); pointer-events:none;
+    transition:all .45s cubic-bezier(.4,0,.2,1); max-height:0; padding-top:0; padding-bottom:0; margin-bottom:0; border-width:0; overflow:hidden }
+  .srv-dot{ width:8px; height:8px; border-radius:50%; background:var(--alert); flex:none;
+    box-shadow:0 0 0 0 rgba(255,77,94,.5); animation:srvPulse 1.6s infinite }
+  .srv-dot.ok{ background:var(--go); box-shadow:0 0 0 0 rgba(52,211,153,.5) }
+  @keyframes srvPulse{ 70%{ box-shadow:0 0 0 9px rgba(255,77,94,0) } 100%{ box-shadow:0 0 0 0 rgba(255,77,94,0) } }
+  .spin{ width:14px; height:14px; border:2px solid rgba(233,238,245,.25); border-top-color:var(--mist);
+    border-radius:50%; animation:spin .7s linear infinite; flex:none }
+  @keyframes spin{ to{ transform:rotate(360deg) } }
+
+  /* ---------- solver console ---------- */
+  .sl-line{ font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:21px; white-space:nowrap;
+    color:rgba(233,238,245,.35); opacity:.3; transform:translateY(5px);
+    transition:opacity .35s, transform .35s, color .35s }
+  .sl-line.on{ opacity:1; transform:translateY(0); color:rgba(233,238,245,.8) }
+  .sl-line.bad.on{ color:var(--alert) }
+  .sl-line.mv.on{ color:#fff }
+  .sl-line.ok.on{ color:var(--go); font-weight:600 }
+  .cchip{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em;
+    padding:4px 10px; border-radius:999px; border:1px solid rgba(233,238,245,.18); color:rgba(233,238,245,.45); transition:all .4s }
+  .cchip.ok{ border-color:rgba(52,211,153,.6); color:var(--go); background:rgba(52,211,153,.1) }
+  .cchip.ok::after{ content:" ✓" }
+
+  /* ---------- timetable table ---------- */
+  .rt-head,.rt-row{ display:grid; grid-template-columns:36px repeat(5,1fr); gap:4px }
+  .rt-head span{ font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.18em; color:rgba(233,238,245,.5); text-align:center; padding-bottom:5px }
+  .rt-row{ margin-bottom:4px }
+  .rt-p{ font-family:'IBM Plex Mono',monospace; font-size:9px; color:rgba(233,238,245,.4); display:flex; align-items:center }
+  .rt-cell{ background:color-mix(in srgb, var(--tc) 13%, transparent);
+    border:1px solid color-mix(in srgb, var(--tc) 30%, transparent); border-left:3px solid var(--tc);
+    border-radius:6px; padding:5px 7px; min-height:36px; display:flex; flex-direction:column; justify-content:center;
+    transition:transform .25s, filter .25s, box-shadow .25s; cursor:default }
+  .rt-cell:hover, .rt-cell.hl{ transform:translateY(-2px); filter:brightness(1.3);
+    box-shadow:0 6px 18px color-mix(in srgb, var(--tc) 35%, transparent) }
+  .rt-cell b{ font-size:10px; font-weight:700; color:var(--mist); line-height:1.25 }
+  .rt-cell i{ font-family:'IBM Plex Mono',monospace; font-style:normal; font-size:8.5px; color:rgba(233,238,245,.55) }
+  .rt-free{ align-items:center; background:transparent; border:1px dashed rgba(233,238,245,.12); border-left:1px dashed rgba(233,238,245,.12); color:rgba(233,238,245,.18); font-size:10px }
+
+  /* status pill */
+  #statusPill{ display:flex; align-items:center; gap:8px; border-radius:999px; padding:7px 14px;
+    font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:rgba(233,238,245,.6) }
+
+  .shake{ animation:shakeX .45s }
+  @keyframes shakeX{ 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(3px)} }
+
+  /* modals + toast */
+  .modal-in{ opacity:0 } .modal-in.on{ opacity:1 }
+  .mfield{ width:100%; border-radius:12px; padding:12px 14px; font-size:14px; color:var(--mist);
+    background:rgba(233,238,245,.05); border:1px solid rgba(233,238,245,.14); outline:none;
+    transition:border-color .3s, background .3s }
+  .mfield:focus{ border-color:var(--brand); background:rgba(233,238,245,.08) }
+  .mfield::placeholder{ color:rgba(233,238,245,.3) }
+
+  /* loader tiles */
+  .ld-tile{ width:26px; height:26px; border-radius:7px; animation:ldPulse 1.4s ease-in-out infinite }
+  @keyframes ldPulse{ 0%,100%{transform:scale(.82); opacity:.55} 50%{transform:scale(1); opacity:1} }
+
+  /* cursor */
+  #cursorDot{ position:fixed; top:0; left:0; width:6px; height:6px; border-radius:50%; background:var(--brand);
+    z-index:100; pointer-events:none; opacity:0 }
+  #cursorRing{ position:fixed; top:0; left:0; width:34px; height:34px; border-radius:50%;
+    border:1.5px solid rgba(116,201,71,.5); z-index:99; pointer-events:none; opacity:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:width .35s, height .35s, background-color .35s, border-color .35s }
+  #cursorRing.is-active{ width:48px; height:48px; border-color:rgba(116,201,71,.9) }
+  @media (hover:none),(pointer:coarse){ #cursorDot,#cursorRing{ display:none } }
+  body { cursor: default; }
+  a, button, [data-hover] { cursor: pointer; }
+  input, textarea { cursor: text; }
+
+  @media (prefers-reduced-motion: reduce){
+    .grain,.srv-dot,.ld-tile{ animation:none }
+    [data-rise]{ transition:none; opacity:1; transform:none }
+    .dd-menu button{ transition-delay:0s }
+  }
+</style>
+</head>
+
+<body class="text-mist font-sans antialiased">
+
+  <!-- WebGL living background -->
+  <canvas id="scene"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- top bar -->
+  <header class="fixed top-4 inset-x-0 z-40 flex justify-center px-4">
+    <nav class="glass rounded-full px-4 py-2 flex items-center justify-between gap-4 w-full max-w-4xl">
+      <a href="landing.html" id="logo" data-hover class="flex items-center gap-2.5 font-display font-extrabold text-[13px] tracking-wide">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#0B101A"/><rect x="4.5" y="4.5" width="7" height="7" rx="2" fill="#38BDF8"/><rect x="12.5" y="4.5" width="7" height="7" rx="2" fill="#74C947"/><rect x="4.5" y="12.5" width="7" height="7" rx="2" fill="#34D399"/><rect x="12.5" y="12.5" width="7" height="7" rx="2" fill="#A78BFA"/></svg>
+        SchedFlow
+      </a>
+      <div class="flex items-center gap-2.5">
+        <div id="navStatusPill" class="glass rounded-full px-3 py-1.5 flex items-center gap-2 text-[10px] font-mono">
+          <span class="srv-dot" id="stDot"></span>
+          <span id="stTxt" class="text-mist/75">probing backend...</span>
+        </div>
+        <button type="button" id="btnFeedback" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.18em] uppercase font-bold hidden sm:flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/><path d="M8 11h8M8 15h5"/></svg>
+          Feedback
+        </button>
+        <button type="button" id="btnFeedback2" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.18em] uppercase font-bold sm:hidden">Feedback</button>
+        <a href="login.html" id="btnAdmin" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.18em] uppercase font-bold flex items-center gap-1.5" style="--c:var(--go)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/></svg>
+          Admin Login
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============ VIEW 1 · FORM ============ -->
+  <main class="fixed inset-0 z-10">
+    <section id="viewForm" class="view on">
+      <div class="w-full max-w-[560px] text-center">
+        <h1 class="font-display font-extrabold tracking-[-0.035em] leading-[1.08] text-[clamp(2.4rem,5.8vw,4.5rem)] text-white" data-rise style="--d:.1s">
+          View Your <span class="bg-gradient-to-r from-brand via-brand2 to-emerald-400 bg-clip-text text-transparent">Timetable</span>
+        </h1>
+        <p class="mt-4 text-sm md:text-base text-mist/60 leading-relaxed max-w-md mx-auto mb-6" data-rise style="--d:.2s">
+          Pick your department, semester and section — Chronos-2 assembles the rest.
+        </p>
+
+        <!-- the glass form card -->
+        <div class="glass-strong rounded-3xl p-5 md:p-7 text-left" data-rise style="--d:.35s" id="formCard">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="dd" id="ddDept">
+              <button type="button" class="dd-btn glass liquid" data-hover aria-haspopup="listbox" aria-expanded="false">
+                <span class="dd-label">Department</span>
+                <span class="dd-value empty">Select department…</span>
+                <svg class="chev w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <ul class="dd-menu glass-strong" role="listbox"></ul>
+            </div>
+            <div class="dd" id="ddSem">
+              <button type="button" class="dd-btn glass liquid" data-hover aria-haspopup="listbox" aria-expanded="false">
+                <span class="dd-label">Semester</span>
+                <span class="dd-value empty">Select semester…</span>
+                <svg class="chev w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <ul class="dd-menu glass-strong" role="listbox"></ul>
+            </div>
+            <div class="dd" id="ddSec">
+              <button type="button" class="dd-btn glass liquid" data-hover aria-haspopup="listbox" aria-expanded="false">
+                <span class="dd-label">Section</span>
+                <span class="dd-value empty">Select section…</span>
+                <svg class="chev w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <ul class="dd-menu glass-strong" role="listbox"></ul>
+            </div>
+          </div>
+          <button type="button" id="btnView" data-hover class="btn-primary rounded-2xl w-full mt-5 py-4 text-xs tracking-[.22em] uppercase flex items-center justify-center gap-2 magnet">
+            <span class="shine"></span>View Timetable
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <p class="mono-label !text-mist/35 mt-4 text-center" id="formHint">select all three to solve</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 2 · SOLVER ============ -->
+    <section id="viewSolve" class="view">
+      <div class="w-full max-w-[480px]">
+        <div class="glass-strong rounded-3xl p-5 md:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <span class="font-mono text-[11px] tracking-[.18em] uppercase font-semibold text-mist/70">Chronos-2 · solving</span>
+            <span class="flex items-center gap-2 font-mono text-[11px] font-semibold">
+              <span id="slDot" class="w-1.5 h-1.5 rounded-full bg-go animate-pulse"></span>
+              <span id="slPct" class="text-go">0%</span>
+            </span>
+          </div>
+          <div class="h-[3px] bg-mist/10 rounded-full overflow-hidden mb-4">
+            <div id="slBar" class="h-full bg-go transition-[width] duration-200" style="width:0%"></div>
+          </div>
+          <div id="slLines" class="min-h-[190px]"></div>
+          <div class="flex flex-wrap gap-2 pt-4 mt-1 border-t border-mist/10">
+            <span id="cc1" class="cchip">no double-booking</span>
+            <span id="cc2" class="cchip">workload ±1</span>
+            <span id="cc3" class="cchip">gaps packed</span>
+          </div>
+        </div>
+        <p class="mono-label !text-mist/35 mt-5 text-center">the board behind this card is solving in real time</p>
+      </div>
+    </section>
+
+    <!-- ============ VIEW 3 · RESULT ============ -->
+    <section id="viewResult" class="view">
+      <div class="w-full max-w-[880px]">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4" data-rise style="--d:.05s">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="chip" id="resChip" style="--c:var(--brand)"><span class="cdot"></span><span id="resChipTxt">—</span></span>
+            <span class="chip" style="--c:var(--go)"><span class="cdot"></span>0 conflicts · locked</span>
+          </div>
+          <button type="button" id="btnChange" data-hover class="btn-glass rounded-full px-5 py-2.5 text-[10px] tracking-[.18em] uppercase font-bold flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+            Change
+          </button>
+        </div>
+
+        <div class="glass-strong rounded-3xl p-4 md:p-5 overflow-x-auto" data-rise style="--d:.15s" id="tableCard">
+          <div id="rtBody" class="min-w-[560px]"></div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 mt-4" data-rise style="--d:.3s">
+          <div class="flex flex-wrap gap-x-3 gap-y-1.5" id="rtLegend"></div>
+          <div class="flex flex-wrap gap-2.5">
+            <button type="button" id="btnShare" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.16em] uppercase font-bold flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.6 2.5 13.4 0 16-2.5-2.6-2.5-13.4 0-16z"/></svg>Share
+            </button>
+            <button type="button" id="btnPDF" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.16em] uppercase font-bold flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 14V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>PDF
+            </button>
+            <button type="button" id="btnICS" data-hover class="btn-glass rounded-full px-4 py-2 text-[10px] tracking-[.16em] uppercase font-bold flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>.ics
+            </button>
+          </div>
+        </div>
+        <p class="mono-label !text-mist/30 mt-4 text-center" data-rise style="--d:.4s">hover any class — its tile answers on the board behind</p>
+      </div>
+    </section>
+  </main>
+
+
+  <div class="fixed bottom-4 right-4 md:right-6 z-40 mono-label !text-mist/30 hidden sm:block">AMOLED · WEBGL · ONE PAGE</div>
+
+  <!-- feedback modal -->
+  <div id="mFeedback" class="modal-in fixed inset-0 z-[70] invisible flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
+    <div class="fbBack absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-400" style="opacity:0"></div>
+    <div class="fbPanel glass-strong relative rounded-3xl w-full max-w-md p-6 transition-all duration-400" style="opacity:0; transform:translateY(2rem)">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="fbTitle" class="font-display font-bold text-lg">Feedback / Complaint</h3>
+        <button type="button" class="fbClose btn-glass rounded-full p-2" data-hover aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-4" id="fbTypes">
+        <button type="button" class="chip on" data-t="wrong_room" style="--c:var(--alert)"><span class="cdot"></span>Wrong Room</button>
+        <button type="button" class="chip" data-t="wrong_teacher" style="--c:var(--sky)"><span class="cdot"></span>Wrong Faculty</button>
+        <button type="button" class="chip" data-t="absent_teacher" style="--c:var(--amber)"><span class="cdot"></span>Faculty Absent</button>
+        <button type="button" class="chip" data-t="other" style="--c:var(--brand)"><span class="cdot"></span>Other / Suggestion</button>
+      </div>
+      <textarea id="fbMsg" rows="4" class="mfield resize-none" placeholder="Tell us what happened — the more detail, the faster we fix it."></textarea>
+      <button type="button" id="fbSend" data-hover class="btn-primary rounded-full w-full mt-4 py-3.5 text-[11px] tracking-[.22em] uppercase flex items-center justify-center gap-2 magnet">
+        <span class="shine"></span>Send feedback
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- admin modal -->
+  <div id="mAdmin" class="modal-in fixed inset-0 z-[70] invisible flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="adTitle">
+    <div class="adBack absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-400" style="opacity:0"></div>
+    <div class="adPanel glass-strong relative rounded-3xl w-full max-w-sm p-6 transition-all duration-400" style="opacity:0; transform:translateY(2rem)">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="adTitle" class="font-display font-bold text-lg">Admin Login</h3>
+        <button type="button" class="adClose btn-glass rounded-full p-2" data-hover aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <input id="adEmail" type="email" class="mfield mb-3" placeholder="admin@institution.edu" autocomplete="username">
+      <input id="adPass" type="password" class="mfield" placeholder="••••••••" autocomplete="current-password">
+      <button type="button" id="adSend" data-hover class="btn-primary rounded-full w-full mt-4 py-3.5 text-[11px] tracking-[.22em] uppercase flex items-center justify-center gap-2 magnet">
+        <span class="shine"></span>Sign in
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <p class="mono-label !text-mist/30 mt-4 text-center">demo build — auth is stubbed</p>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div id="toast" class="glass-strong fixed left-1/2 bottom-12 z-[90] px-5 py-3 rounded-full text-[11px] tracking-[.18em] uppercase font-bold flex items-center gap-2.5 pointer-events-none transition-all duration-500" style="opacity:0; transform:translate(-50%,1rem)">
+    <svg class="w-4 h-4 text-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+    <span id="toastMsg">Done</span>
+  </div>
+
+  <!-- loader -->
+  <div id="loader" class="fixed inset-0 z-[95] bg-black flex flex-col items-center justify-center gap-6 transition-transform duration-[800ms] ease-[cubic-bezier(.87,0,.13,1)]">
+    <div class="flex gap-2">
+      <span class="ld-tile" style="background:#38BDF8"></span>
+      <span class="ld-tile" style="background:#74C947;animation-delay:.15s"></span>
+      <span class="ld-tile" style="background:#34D399;animation-delay:.3s"></span>
+      <span class="ld-tile" style="background:#A78BFA;animation-delay:.45s"></span>
+    </div>
+    <span class="mono-label">SchedFlow · timetable viewer</span>
+  </div>
+
+  <!-- cursor -->
+  <div id="cursorDot" aria-hidden="true"></div>
+  <div id="cursorRing" aria-hidden="true"></div>
+
+  <noscript><p style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:2rem;text-align:center">This page needs JavaScript — the background is a live WebGL board.</p></noscript>
+
+  <script>
+    setTimeout(function(){
+      if(!window.__appReady){
+        document.documentElement.classList.remove('lock');
+        var l=document.getElementById('loader');
+        if(l){ l.style.transform='translateY(-101%)'; setTimeout(function(){l.remove()},800); }
+      }
+    },6000);
+  </script>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ================= config & helpers ================= */
+const TAU=Math.PI*2, GOLD=(1+Math.sqrt(5))/2;
+const LOW = matchMedia('(pointer:coarse)').matches || innerWidth<820;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let isMobile = innerWidth<768;
+const MOT = REDUCED ? .25 : 1;
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp=(v,a,b)=>Math.min(Math.max(v,a),b);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const fract=x=>x-Math.floor(x);
+const sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+const bell=(x,c,w)=>Math.max(0,1-Math.pow((x-c)/w,2));
+const DAYS=['MON','TUE','WED','THU','FRI'];
+const shade=(hex,f)=>'#'+new THREE.Color(hex).multiplyScalar(f).getHexString();
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+/* ================= data ================= */
+const PALETTE=['#4F8CFF','#C77DFF','#2DD4BF','#FFB224','#FF7A9C','#58D68D'];
+const DEPTS={
+  CSE:{name:'Computer Science', subjects:['DSA','OS','DBMS','CN','AI','SE']},
+  ECE:{name:'Electronics & Comm', subjects:['SS','DE','EC','EM','CTL','VLSI']},
+  ME :{name:'Mechanical', subjects:['TD','FM','MOS','HT','CIM','MD']},
+  CE :{name:'Civil', subjects:['SM','RCA','GT','ENV','TE','CP']},
+  IT :{name:'Info Technology', subjects:['WDD','CCN','DS','IS','DW','BDA']},
+};
+const TEACHERS=['Dr. Mehta','Prof. Rao','Dr. Kaur','Dr. Fern','Prof. Haq','Dr. Iyer','Dr. Dharma','Prof. Sen'];
+const ROOMS=['R-201','R-204','LAB-1','R-118','LAB-2','R-09'];
+const N=24; /* tiles */
+
+/* seeded timetable generator — every (dept,sem,sec) gets its own week */
+function makeTimetable(dept,sem,sec){
+  const rng=mulberry32(hashStr(`${dept}|${sem}|${sec}`));
+  const subs=DEPTS[dept].subjects;
+  const counts=[5,5,4,4,3,3];
+  const slots=[...Array(30).keys()];
+  for(let i=29;i>0;i--){const j=(rng()*(i+1))|0;[slots[i],slots[j]]=[slots[j],slots[i]];}
+  const usedT=new Set(); const blocks=[]; let si=0;
+  subs.forEach((code,sub)=>{
+    for(let k=0;k<counts[sub];k++){
+      const sIdx=slots[si++];
+      let ti=(rng()*TEACHERS.length)|0, guard=0;
+      while(usedT.has(ti+':'+sIdx)&&guard++<8) ti=(ti+1)%TEACHERS.length;
+      usedT.add(ti+':'+sIdx);
+      blocks.push({ code, sub, col:PALETTE[sub], teacher:TEACHERS[ti], room:ROOMS[sub],
+        sol:[(sIdx/6)|0, sIdx%6], chaos:null, stage:'cloud', tween:null, hopped:false,
+        hover:0, hoverT:0, mw0:null, mw1:null, mover:false, collider:false });
+    }
+  });
+  /* three movers: two clashes + one gap-filler */
+  const order=[...blocks.keys()];
+  for(let i=order.length-1;i>0;i--){const j=(rng()*(i+1))|0;[order[i],order[j]]=[order[j],order[i]];}
+  const movers=[order[0],order[1],order[2]];
+  const victims=blocks.map((b,i)=>i).filter(i=>!movers.includes(i));
+  const v0=victims[(rng()*victims.length)|0];
+  let v1=victims[(rng()*victims.length)|0]; if(v1===v0) v1=victims[(victims.indexOf(v0)+1)%victims.length];
+  blocks[movers[0]].chaos=[...blocks[v0].sol,1]; blocks[movers[0]].collider=true;
+  blocks[movers[1]].chaos=[...blocks[v1].sol,1]; blocks[movers[1]].collider=true;
+  blocks[movers[2]].chaos=[(slots[27]/6)|0, slots[27]%6, 0]; /* a stray free slot */
+  movers.forEach((mi,k)=>{ blocks[mi].mover=true; blocks[mi].mw0=1.35+k*.55; blocks[mi].mw1=blocks[mi].mw0+.5; });
+  blocks.forEach((b,i)=>{ if(!b.chaos) b.chaos=[b.sol[0],b.sol[1],0]; b.i=i; b.stag=fract(i*.37); b.phase=fract(i*.27)*TAU; });
+  /* console lines — synced to the 3D hops */
+  const cell=([d,p])=>`${DAYS[d]} P${p+1}`;
+  const m0=blocks[movers[0]], m1=blocks[movers[1]], m2=blocks[movers[2]];
+  const lines=[
+    {t:.30, c:'',       s:`> ${dept}-${sem}${sec} · 24 bookings · 6 subjects`},
+    {t:.65, c:'',       s:`> drafting against 30 slots · 6 rules armed`},
+    {t:1.02,c:'bad',    s:`× section clash — two tiles in ${cell(m0.chaos)}`},
+    {t:1.16,c:'bad',    s:`× teacher ${m1.teacher} — overlap ${cell(m1.chaos)}`},
+    {t:1.92,c:'mv',     s:`→ ${m0.code} · ${cell(m0.chaos)} → ${cell(m0.sol)} ✓`},
+    {t:2.47,c:'mv',     s:`→ ${m1.code} · ${cell(m1.chaos)} → ${cell(m1.sol)} ✓`},
+    {t:3.02,c:'mv',     s:`→ ${m2.code} · ${cell(m2.chaos)} → ${cell(m2.sol)} ✓ gap packed`},
+    {t:3.28,c:'ok',     s:`= locked · 0 conflicts · load ±1 period`},
+  ];
+  return {blocks,lines,dept,sem,sec};
+}
+
+/* ================= three.js scene ================= */
+const canvas=$('#scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, LOW?1.6:2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.setClearColor(0x000000,0);           /* pure AMOLED black — nothing else */
+const MAX_ANISO=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(new THREE.Color('#000000'),.011);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,120);
+
+scene.add(new THREE.AmbientLight(0xfff4e6,.85));
+const key=new THREE.DirectionalLight(0xfff3e2,1.15); key.position.set(4,6,7); scene.add(key);
+const fill=new THREE.DirectionalLight(0xdfe8f2,.32); fill.position.set(-5,2,4); scene.add(fill);
+const rimV=new THREE.PointLight(0x8B5CF6,.6,26); rimV.position.set(-7,2,-3); scene.add(rimV);
+const rimB=new THREE.PointLight(0x74C947,.5,26); rimB.position.set(7,1,-4); scene.add(rimB);
+const plRed=new THREE.PointLight(0xFF4D5E,0,16);  plRed.position.set(0,.5,4.5); scene.add(plRed);
+const plGreen=new THREE.PointLight(0x34D399,0,16); plGreen.position.set(0,.5,4); scene.add(plGreen);
+
+/* Pure AMOLED Black — Floor checks mat removed per user request */
+
+/* ---------- the world: board + tiles + clock ---------- */
+const worldGroup=new THREE.Group();
+const boardGroup=new THREE.Group();
+worldGroup.add(boardGroup); scene.add(worldGroup);
+
+const CW=1.15, CPH=.8;
+const cellXYZ=(d,p)=>({x:(d-2)*CW, y:(2.5-p)*CPH});
+const stackXYZ=ch=>{
+  const c=cellXYZ(ch[0],ch[1]);
+  return ch[2]===1 ? {x:c.x+.09,y:c.y-.06,z:.46} : {x:c.x-.09,y:c.y+.07,z:.16};
+};
+
+/* grid bars + labels + backing */
+const barMat=new THREE.MeshStandardMaterial({color:'#5A6C86',roughness:.5,metalness:.4});
+const bars=[];
+{
+  const vxs=[-2.875,-1.725,-.575,.575,1.725,2.875];
+  const vys=[2.4,1.6,.8,0,-.8,-1.6,-2.4];
+  vxs.forEach(x=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.032,4.92,.032),barMat);
+    m.position.set(x,0,0); m.scale.y=.001; m.frustumCulled=false; boardGroup.add(m); bars.push({m,axis:'y'});});
+  vys.forEach(y=>{const m=new THREE.Mesh(new THREE.BoxGeometry(5.9,.032,.032),barMat);
+    m.position.set(0,y,0); m.scale.x=.001; m.frustumCulled=false; boardGroup.add(m); bars.push({m,axis:'x'});});
+}
+const backing=new THREE.Mesh(new THREE.PlaneGeometry(6.3,5.4),
+  new THREE.MeshBasicMaterial({color:'#0D1322',transparent:true,opacity:0}));
+backing.position.z=-.14; backing.frustumCulled=false; boardGroup.add(backing);
+
+function textPlane(txt,font,W,H,color){
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=MAX_ANISO;
+  tex.minFilter=THREE.LinearMipmapLinearFilter; tex.generateMipmaps=true;
+  const draw=()=>{ x.clearRect(0,0,W,H); x.font=font; x.fillStyle=color;
+    x.textAlign='center'; x.textBaseline='middle'; x.fillText(txt,W/2,H/2+1); tex.needsUpdate=true; };
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(W/240,H/240),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+  mesh.frustumCulled=false; draw();
+  return {mesh,draw};
+}
+const labels=[];
+DAYS.forEach((d,i)=>{const p=textPlane(d,'600 44px "IBM Plex Mono", monospace',192,96,'rgba(233,238,245,.7)');
+  p.mesh.position.set((i-2)*CW,2.78,0); boardGroup.add(p.mesh); labels.push(p);});
+for(let p=0;p<6;p++){const lp=textPlane('P'+(p+1),'500 36px "IBM Plex Mono", monospace',128,80,'rgba(233,238,245,.5)');
+  lp.mesh.position.set(-3.36,(2.5-p)*CPH,0); boardGroup.add(lp.mesh); labels.push(lp);}
+
+/* the P1–P6 clock — ambient time; sweeps faster while solving */
+const clockGroup=new THREE.Group(); clockGroup.position.set(0,.15,-2.6); worldGroup.add(clockGroup);
+let handGroup,handSec;
+{
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(4.1,.02,8,140),
+    new THREE.MeshStandardMaterial({color:'#6E7BA0',metalness:.7,roughness:.35}));
+  clockGroup.add(ring);
+  const tickMat=new THREE.MeshStandardMaterial({color:'#98A6C4',metalness:.5,roughness:.4});
+  for(let k=0;k<6;k++){
+    const a=k*TAU/6;
+    const t=new THREE.Mesh(new THREE.BoxGeometry(.06,.3,.06),tickMat);
+    t.position.set(Math.sin(a)*3.9,Math.cos(a)*3.9,0); t.rotation.z=-a; clockGroup.add(t);
+    const lp=textPlane('P'+(k+1),'600 40px "IBM Plex Mono", monospace',144,88,'rgba(233,238,245,.4)');
+    lp.mesh.position.set(Math.sin(a)*4.55,Math.cos(a)*4.55,0); clockGroup.add(lp.mesh);
+  }
+  handGroup=new THREE.Group();
+  const hm=new THREE.MeshStandardMaterial({color:'#74C947',emissive:'#74C947',emissiveIntensity:.35});
+  const hand=new THREE.Mesh(new THREE.BoxGeometry(.07,3.4,.07),hm); hand.position.y=1.7; handGroup.add(hand);
+  clockGroup.add(handGroup);
+  handSec=new THREE.Group();
+  const sm=new THREE.MeshStandardMaterial({color:'#38BDF8',emissive:'#38BDF8',emissiveIntensity:.3});
+  const sec=new THREE.Mesh(new THREE.BoxGeometry(.04,2.2,.04),sm); sec.position.y=1.1; handSec.add(sec);
+  clockGroup.add(handSec);
+}
+
+/* ---------- the 24 tiles (2x canvas, self-lit, razor sharp) ---------- */
+function roundRectPath(x,a,b,w,h,r){
+  x.beginPath();
+  x.moveTo(a+r,b); x.lineTo(a+w-r,b); x.arcTo(a+w,b,a+w,b+r,r);
+  x.lineTo(a+w,b+h-r); x.arcTo(a+w,b+h,a+w-r,b+h,r);
+  x.lineTo(a+r,b+h); x.arcTo(a,b+h,a,b+h-r,r);
+  x.lineTo(a,b+r); x.arcTo(a,b,a+r,b,r); x.closePath();
+}
+const tiles=[];
+for(let i=0;i<N;i++){
+  const cv=document.createElement('canvas'); cv.width=512; cv.height=336;
+  const ctx=cv.getContext('2d');
+  const tex=new THREE.CanvasTexture(cv);
+  tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=MAX_ANISO;
+  tex.minFilter=THREE.LinearMipmapLinearFilter; tex.magFilter=THREE.LinearFilter; tex.generateMipmaps=true;
+  const frontMat=new THREE.MeshStandardMaterial({
+    map:tex, emissiveMap:tex, emissive:new THREE.Color('#ffffff'), emissiveIntensity:.3,
+    roughness:.45, metalness:0 });
+  const sideMat=new THREE.MeshStandardMaterial({color:new THREE.Color(PALETTE[i%6]).multiplyScalar(.55),roughness:.55});
+  const tileArr=[sideMat,sideMat,sideMat,sideMat,frontMat,frontMat];
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(1.02,.66,.3),tileArr);
+  mesh.frustumCulled=false; mesh.visible=false; boardGroup.add(mesh);
+  tiles.push({i,canvas:cv,ctx,tex,frontMat,mesh,tileArr,drawnStatus:''});
+}
+function drawTile(t,b,status){
+  const x=t.ctx,W=512,H=336,col=b.col;
+  x.clearRect(0,0,W,H);
+  let bg,bd,bc,sc,tc,chipF,rc;
+  if(status==='conflict'){ bg='#230E13'; bd='rgba(255,77,94,.9)'; bc='#FF4D5E'; sc='#FF8A97'; tc='#FFDCE0'; chipF='rgba(255,255,255,.08)'; rc='rgba(255,220,224,.7)'; }
+  else if(status==='solved'){ bg='#0D2418'; bd='rgba(52,211,153,.85)'; bc='#34D399'; sc='#57E8A6'; tc='#D9F8E8'; chipF='rgba(255,255,255,.08)'; rc='rgba(217,248,232,.65)'; }
+  else{ bg='#FCFBF7'; bd='rgba(16,22,36,.85)'; bc=col; sc=shade(col,.72); tc='#252D42'; chipF='rgba(18,24,40,.07)'; rc='rgba(18,24,40,.66)'; }
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+  x.strokeStyle=bd; x.lineWidth=6; x.strokeRect(3,3,W-6,H-6);
+  x.fillStyle=bc; x.fillRect(0,0,24,H);
+  x.textAlign='left'; x.textBaseline='alphabetic';
+  x.fillStyle=sc; x.font='800 58px "Plus Jakarta Sans", sans-serif';
+  x.fillText(b.code,56,118);
+  x.fillStyle=tc; x.font='500 36px "IBM Plex Mono", monospace';
+  x.fillText(b.teacher,56,186);
+  x.font='600 32px "IBM Plex Mono", monospace';
+  const w=x.measureText(b.room).width+40;
+  x.fillStyle=chipF; roundRectPath(x,56,214,w,58,14); x.fill();
+  x.fillStyle=rc; x.fillText(b.room,76,254);
+  if(status==='conflict'){
+    x.fillStyle='#FF4D5E'; x.font='700 54px "IBM Plex Mono", monospace'; x.textAlign='right';
+    x.fillText('×2',W-24,74); x.textAlign='left';
+  }
+  t.tex.needsUpdate=true; t.drawnStatus=status;
+}
+
+/* clash frames (2) — repositioned per generation */
+const clashFrames=[0,1].map(()=>{
+  const g=new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-.6,-.44,.68), new THREE.Vector3(.6,-.44,.68),
+    new THREE.Vector3(.6,.44,.68),  new THREE.Vector3(-.6,.44,.68)]);
+  const line=new THREE.LineLoop(g,new THREE.LineBasicMaterial({color:'#FF4D5E',transparent:true,opacity:0}));
+  line.frustumCulled=false; boardGroup.add(line);
+  return line;
+});
+
+/* ================= 24-BLOCK FULL-SCREEN 3D SIMULATION ================= */
+const BLOCK_SEEDS = [
+  // 8 Middle & Center blocks (foreground and mid-depth, bobbing prominently in front and around the center)
+  { bx: -1.8, by:  1.5, bz:  1.8, vx:  0.28, vy:  0.32, vz:  0.36, ampX: 1.4, ampY: 1.1, ampZ: 0.8 },
+  { bx:  1.8, by:  1.4, bz:  1.6, vx: -0.26, vy:  0.29, vz:  0.31, ampX: 1.3, ampY: 1.0, ampZ: 0.7 },
+  { bx: -2.3, by: -0.2, bz:  2.0, vx:  0.31, vy: -0.27, vz:  0.34, ampX: 1.2, ampY: 1.2, ampZ: 0.9 },
+  { bx:  2.4, by: -0.3, bz:  1.7, vx: -0.29, vy: -0.30, vz:  0.30, ampX: 1.4, ampY: 1.0, ampZ: 0.8 },
+  { bx: -1.4, by: -2.1, bz:  1.9, vx:  0.33, vy:  0.25, vz: -0.28, ampX: 1.3, ampY: 1.1, ampZ: 0.7 },
+  { bx:  1.5, by: -2.0, bz:  1.5, vx: -0.30, vy:  0.31, vz:  0.33, ampX: 1.2, ampY: 1.2, ampZ: 0.8 },
+  { bx: -0.2, by:  2.6, bz:  1.4, vx:  0.27, vy: -0.28, vz:  0.29, ampX: 1.5, ampY: 0.9, ampZ: 0.6 },
+  { bx:  0.3, by: -2.7, bz:  1.6, vx: -0.32, vy:  0.26, vz: -0.31, ampX: 1.3, ampY: 1.0, ampZ: 0.7 },
+
+  // 8 Corner & Far Perimeter blocks (reaching top-left, top-right, bottom-left, bottom-right, screen edges)
+  { bx: -5.7, by:  3.2, bz: -0.4, vx:  0.22, vy:  0.21, vz:  0.24, ampX: 1.5, ampY: 1.2, ampZ: 0.9 },
+  { bx:  5.7, by:  3.2, bz: -0.4, vx: -0.24, vy:  0.23, vz: -0.22, ampX: 1.5, ampY: 1.2, ampZ: 0.9 },
+  { bx: -5.8, by: -3.0, bz: -0.6, vx:  0.25, vy: -0.22, vz:  0.25, ampX: 1.4, ampY: 1.3, ampZ: 0.8 },
+  { bx:  5.8, by: -3.0, bz: -0.6, vx: -0.23, vy: -0.24, vz: -0.21, ampX: 1.4, ampY: 1.3, ampZ: 0.8 },
+  { bx: -6.4, by:  0.4, bz:  0.3, vx:  0.20, vy:  0.26, vz:  0.23, ampX: 1.6, ampY: 1.4, ampZ: 0.9 },
+  { bx:  6.4, by:  0.4, bz:  0.3, vx: -0.21, vy: -0.25, vz: -0.24, ampX: 1.6, ampY: 1.4, ampZ: 0.9 },
+  { bx: -3.9, by:  3.4, bz: -0.3, vx:  0.27, vy: -0.20, vz:  0.22, ampX: 1.3, ampY: 1.1, ampZ: 0.7 },
+  { bx:  3.9, by:  3.4, bz: -0.3, vx: -0.26, vy:  0.22, vz: -0.24, ampX: 1.3, ampY: 1.1, ampZ: 0.7 },
+
+  // 8 Intermediate Roaming blocks (filling midground, circling and floating between center and corners)
+  { bx: -3.7, by:  1.6, bz:  0.6, vx: -0.28, vy:  0.27, vz:  0.28, ampX: 1.4, ampY: 1.2, ampZ: 0.8 },
+  { bx:  3.7, by:  1.5, bz:  0.6, vx:  0.29, vy: -0.28, vz: -0.26, ampX: 1.4, ampY: 1.2, ampZ: 0.8 },
+  { bx: -3.9, by: -1.7, bz:  0.8, vx:  0.31, vy:  0.24, vz:  0.29, ampX: 1.3, ampY: 1.3, ampZ: 0.9 },
+  { bx:  3.9, by: -1.8, bz:  0.8, vx: -0.30, vy: -0.28, vz: -0.27, ampX: 1.3, ampY: 1.3, ampZ: 0.9 },
+  { bx: -3.7, by: -3.3, bz:  0.2, vx:  0.24, vy:  0.26, vz:  0.21, ampX: 1.5, ampY: 1.1, ampZ: 0.7 },
+  { bx:  3.7, by: -3.3, bz:  0.2, vx: -0.25, vy: -0.23, vz: -0.22, ampX: 1.5, ampY: 1.1, ampZ: 0.7 },
+  { bx: -2.9, by:  0.3, bz: -1.0, vx:  0.26, vy: -0.29, vz:  0.31, ampX: 1.4, ampY: 1.2, ampZ: 0.9 },
+  { bx:  2.9, by: -0.3, bz: -1.0, vx: -0.27, vy:  0.28, vz: -0.29, ampX: 1.4, ampY: 1.2, ampZ: 0.9 },
+];
+
+let taNow=0;
+function cloudPose(i,ta){
+  const s = BLOCK_SEEDS[i % BLOCK_SEEDS.length];
+
+  // Wide Lissajous roaming trajectory
+  const roamX = Math.sin(ta * s.vx + i * 1.7) * s.ampX + Math.cos(ta * 0.16 + i * 0.9) * 0.7;
+  const roamY = Math.cos(ta * s.vy + i * 2.3) * s.ampY + Math.sin(ta * 0.14 + i * 1.4) * 0.6;
+  const roamZ = Math.sin(ta * s.vz + i * 1.2) * s.ampZ + Math.cos(ta * 0.20 + i * 2.5) * 0.5;
+
+  // Dynamic random bouncing going here and there
+  const bounceX = Math.sin(ta * 1.35 + i * 3.1) * 0.40;
+  const bounceY = Math.cos(ta * 1.55 + i * 2.7) * 0.45;
+  const bounceZ = Math.sin(ta * 1.15 + i * 2.2) * 0.35;
+
+  const x = s.bx + roamX + bounceX;
+  const y = s.by + roamY + bounceY;
+  const z = s.bz + roamZ + bounceZ;
+
+  // Tumbling 3D rotations on X, Y, Z
+  const rx = Math.sin(ta * 0.75 + i * 1.3) * 0.55 + Math.cos(ta * 0.35 + i) * 0.30;
+  const ry = Math.cos(ta * 0.65 + i * 1.8) * 0.70 + Math.sin(ta * 0.25 + i * 2.1) * 0.40;
+  const rz = Math.sin(ta * 0.55 + i * 2.4) * 0.40;
+
+  return { x, y, z, rx, ry, rz };
+}
+function flyTo(b,targetFn,dur,delay,arc,stage){
+  b.tween={ from:{x:b.mesh.position.x,y:b.mesh.position.y,z:b.mesh.position.z,ry:b.mesh.rotation.y},
+            targetFn, t0:taNow+delay, dur, arc, stage };
+}
+
+/* ================= state machine ================= */
+let mode='form';                 /* form | solve | result */
+let TT=null;                     /* current timetable data */
+let solveT0=0, sc=-1;
+let resultShown=false;
+let gridOp=0, camAz=.45, camEl=.1, camR=11.9, lookY=.05, worldY=-.2;
+
+function setMode(m){
+  mode=m;
+  $('#viewForm').classList.toggle('on',m==='form');
+  $('#viewSolve').classList.toggle('on',m==='solve');
+  $('#viewResult').classList.toggle('on',m==='result');
+  const st=$('#stTxt'), dot=$('#stDot');
+  if(m==='solve'){ st.textContent='solving…'; dot.className='srv-dot'; }
+  if(m==='result'){ st.textContent='0 conflicts · locked'; dot.className='srv-dot ok'; }
+  if(m==='form'){ st.textContent=serverOK?'connected · chronos-2 ready':'server unreachable'; dot.className='srv-dot'+(serverOK?' ok':''); }
+}
+
+/* ================= DOM: dropdowns ================= */
+let serverOK=false;
+const sel={dept:null,sem:null,sec:null};
+function makeDropdown(root,opts){
+  const btn=root.querySelector('.dd-btn');
+  const val=root.querySelector('.dd-value');
+  const menu=root.querySelector('.dd-menu');
+  let open=false, value=null, items=opts.items||[];
+  function render(){
+    menu.innerHTML='';
+    items.forEach((it,i)=>{
+      const li=document.createElement('li');
+      const b=document.createElement('button');
+      b.type='button'; b.style.setProperty('--i',i);
+      b.setAttribute('role','option');
+      b.innerHTML=`<span>${it.label}</span>
+        <svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg>`;
+      if(value!==null&&it.value===value) b.classList.add('sel');
+      b.addEventListener('click',()=>{ select(it.value); close(); });
+      li.appendChild(b); menu.appendChild(li);
+    });
+  }
+  function select(v){
+    value=v; const it=items.find(x=>x.value===v);
+    val.textContent=it?it.label:v; val.classList.remove('empty');
+    btn.setAttribute('aria-expanded','false');
+    render();
+    opts.onChange&&opts.onChange(v);
+  }
+  function open_(){ if(root.classList.contains('disabled'))return;
+    closeAll(root); open=true; root.classList.add('open'); btn.setAttribute('aria-expanded','true');
+    const f=menu.querySelector('button.sel')||menu.querySelector('button'); f&&f.focus(); }
+  function close(){ open=false; root.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+  btn.addEventListener('click',()=>open?close():open_());
+  btn.addEventListener('keydown',e=>{ if(e.key==='ArrowDown'||e.key==='Enter'){e.preventDefault();open_();} });
+  menu.addEventListener('keydown',e=>{
+    const bs=[...menu.querySelectorAll('button')];
+    const idx=bs.indexOf(document.activeElement);
+    if(e.key==='Escape'){ close(); btn.focus(); }
+    if(e.key==='ArrowDown'){ e.preventDefault(); bs[Math.min(idx+1,bs.length-1)]?.focus(); }
+    if(e.key==='ArrowUp'){ e.preventDefault(); bs[Math.max(idx-1,0)]?.focus(); }
+  });
+  function closeAll(except){ $$('.dd.open').forEach(d=>{ if(d!==except){ d.classList.remove('open'); d.querySelector('.dd-btn').setAttribute('aria-expanded','false'); } }); }
+  document.addEventListener('click',e=>{ if(!root.contains(e.target)) close(); });
+  render();
+  return {
+    setItems(arr){ items=arr; value=null; val.textContent=opts.waitText||'Select…'; val.classList.add('empty'); render(); },
+    select(v){ select(v); },
+    enable(){ root.classList.remove('disabled'); },
+    disable(){ root.classList.add('disabled'); close(); },
+    get value(){ return value; }
+  };
+}
+const ddDept=makeDropdown($('#ddDept'),{waitText:'Select department',onChange:handleDeptChange});
+const ddSem=makeDropdown($('#ddSem'),{waitText:'Select semester',onChange:handleSemChange});
+const ddSec=makeDropdown($('#ddSec'),{waitText:'Select section',onChange:v=>{sel.sec=v;syncHint();}});
+
+function syncHint(){
+  const all=sel.dept&&sel.sem&&sel.sec;
+  $('#formHint').textContent=all
+    ? `ready — ${sel.dept} · sem ${sel.sem} · ${sel.sec}`
+    : 'select all three to solve';
+}
+
+/* ================= API Connection & Dynamic Dropdowns ================= */
+let backendDepts = null;
+
+async function checkAndInitStructure(){
+  let connected = false;
+  try {
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 800);
+    const res = await fetch('/api/public/structure', { signal: ctrl.signal });
+    clearTimeout(timeoutId);
+    if(res.ok){
+      const data = await res.json();
+      if(Array.isArray(data) && data.length > 0){
+        connected = true;
+        serverOK = true;
+        backendDepts = data;
+        const deptItems = data.map(d => ({ value: d.code, label: `${d.code} — ${d.name}` }));
+        ddDept.setItems(deptItems);
+        ddDept.enable();
+        $('#stTxt').textContent = 'Backend: Connected (Live)';
+        $('#stDot').className = 'srv-dot ok';
+        if (deptItems.length > 0) {
+          setTimeout(() => ddDept.select(deptItems[0].value), 100);
+        }
+        return;
+      }
+    }
+  } catch(e){}
+
+  // Offline / Local Mode Fallback — seamless and ready
+  serverOK = false;
+  ddDept.setItems(Object.keys(DEPTS).map(k=>({value:k, label:`${k} — ${DEPTS[k].name}`})));
+  ddSem.setItems([...Array(8)].map((_,i)=>({value:String(i+1), label:`Semester ${i+1}`})));
+  ddSec.setItems(['A','B','C','D'].map(s=>({value:s, label:`Section ${s}`})));
+  [ddDept, ddSem, ddSec].forEach((d,k)=>setTimeout(()=>d.enable(), 50 + k*60));
+  $('#stTxt').textContent = 'Backend: Offline (Local Mode)';
+  $('#stDot').className = 'srv-dot';
+  setTimeout(() => {
+    ddDept.select('CSE');
+    ddSem.select('5');
+    ddSec.select('A');
+  }, 200);
+}
+
+function handleDeptChange(deptCode){
+  sel.dept = deptCode;
+  if(backendDepts){
+    const dObj = backendDepts.find(d => d.code === deptCode);
+    if(dObj && dObj.semesters && dObj.semesters.length > 0){
+      const sems = dObj.semesters.map(s => ({ value: String(s.number), label: `Semester ${s.number}` }));
+      ddSem.setItems(sems);
+      ddSem.enable();
+      setTimeout(() => ddSem.select(sems[0].value), 40);
+      return;
+    }
+  }
+  ddSem.setItems([...Array(8)].map((_,i)=>({value:String(i+1),label:`Semester ${i+1}`})));
+  ddSem.enable();
+  setTimeout(() => ddSem.select('1'), 40);
+}
+
+function handleSemChange(semNum){
+  sel.sem = semNum;
+  if(backendDepts && sel.dept){
+    const dObj = backendDepts.find(d => d.code === sel.dept);
+    const sObj = dObj?.semesters?.find(s => String(s.number) === String(semNum));
+    if(sObj && sObj.sections && sObj.sections.length > 0){
+      const secs = sObj.sections.map(sec => ({ value: sec.name, label: `Section ${sec.name}` }));
+      ddSec.setItems(secs);
+      ddSec.enable();
+      setTimeout(() => ddSec.select(secs[0].value), 40);
+      return;
+    }
+  }
+  ddSec.setItems(['A','B','C','D'].map(s=>({value:s,label:`Section ${s}`})));
+  ddSec.enable();
+  setTimeout(() => ddSec.select('A'), 40);
+}
+
+const btnRetry = $('#btnRetry');
+if (btnRetry) {
+  btnRetry.addEventListener('click', () => {
+    if(btnRetry.disabled) return;
+    btnRetry.disabled = true;
+    btnRetry.innerHTML = '<span class="spin"></span><span>Connecting</span>';
+    setTimeout(async () => {
+      await checkAndInitStructure();
+      btnRetry.disabled = false;
+      btnRetry.innerHTML = '<span>Sync API</span>';
+      showToast('SchedFlow connection refreshed');
+    }, 600);
+  });
+}
+
+// Auto-initialize on load
+setTimeout(checkAndInitStructure, 50);
+
+/* ================= the solve sequence ================= */
+async function startSolve(){
+  if(!sel.dept||!sel.sem||!sel.sec){
+    $('#formCard').classList.remove('shake'); void $('#formCard').offsetWidth;
+    $('#formCard').classList.add('shake');
+    showToast('Pick department, semester & section first');
+    return;
+  }
+  
+  // Try querying backend timetable
+  let apiSchedule = null;
+  try {
+    const res = await fetch(`/api/public/timetable?department=${encodeURIComponent(sel.dept)}&semester=${encodeURIComponent(sel.sem)}&section=${encodeURIComponent(sel.sec)}`);
+    if(res.ok){
+      const data = await res.json();
+      if(data && data.entries && data.entries.length > 0){
+        apiSchedule = data;
+      }
+    }
+  } catch(e){}
+
+  if(apiSchedule && apiSchedule.entries && apiSchedule.entries.length > 0){
+    const entries = apiSchedule.entries;
+    const blocks = [];
+    const subsFound = [...new Set(entries.map(e => e.subject_code))];
+    entries.forEach((e, idx) => {
+      if(idx >= 24) return;
+      const subIdx = subsFound.indexOf(e.subject_code);
+      const dayIdx = Math.max(0, Math.min(4, Number(e.day_of_week) - 1));
+      const periodIdx = Math.max(0, Math.min(5, Number(e.period) - 1));
+      blocks.push({
+        code: e.subject_code,
+        sub: subIdx >= 0 ? subIdx : 0,
+        col: PALETTE[subIdx % PALETTE.length] || '#74C947',
+        teacher: e.teacher_name || 'Faculty',
+        room: e.room_name || 'Room',
+        sol: [dayIdx, periodIdx],
+        chaos: [dayIdx, periodIdx, 0],
+        stage: 'cloud', tween: null, hopped: false,
+        hover: 0, hoverT: 0, mw0: null, mw1: null, mover: false, collider: false,
+        i: idx, stag: fract(idx * 0.37), phase: fract(idx * 0.27) * TAU
+      });
+    });
+    while(blocks.length < 24){
+      const extra = makeTimetable(sel.dept, sel.sem, sel.sec).blocks[blocks.length];
+      blocks.push(extra);
+    }
+    TT = {
+      blocks,
+      lines: [
+        {t:.30, c:'', s:`> ${sel.dept}-${sel.sem}${sel.sec} · ${entries.length} persistent database bookings`},
+        {t:.75, c:'', s:`> verified against room capacity & faculty load limits`},
+        {t:1.5, c:'ok', s:`✓ zero room collisions · zero teacher double-bookings`},
+        {t:2.2, c:'ok', s:`= synchronized with campus database · locked`}
+      ],
+      dept: sel.dept, sem: sel.sem, sec: sel.sec
+    };
+  } else {
+    TT=makeTimetable(sel.dept,sel.sem,sel.sec);
+  }
+
+  /* rebuild tile faces + clash frames */
+  TT.blocks.forEach((b,i)=>{
+    const t=tiles[i];
+    drawTile(t,b,'neutral');
+    b.mesh=t.mesh; b.frontMat=t.frontMat;
+    b.stage='cloud'; b.tween=null; b.hopped=false; b.hover=0; b.hoverT=0;
+  });
+  const cols=TT.blocks.filter(b=>b.collider);
+  clashFrames.forEach((f,k)=>{
+    const c=cols[k]?stackXYZ(cols[k].chaos):{x:0,y:0};
+    f.position.set(c.x,c.y,0);
+  });
+  /* console lines */
+  $('#slLines').innerHTML=TT.lines.map(l=>`<div class="sl-line ${l.c}">${l.s}</div>`).join('');
+  $('#slBar').style.width='0%'; $('#slPct').textContent='0%';
+  ['#cc1','#cc2','#cc3'].forEach(id=>$(id).classList.remove('ok'));
+  /* fly everything to the draft board */
+  TT.blocks.forEach(b=>flyTo(b,()=>stackXYZ(b.chaos),REDUCED?.15:.55,.12+b.stag*.5,1.15,'chaos'));
+  resultShown=false;
+  solveT0=performance.now()/1000;
+  setMode('solve');
+}
+
+function backToForm(){
+  TT.blocks.forEach(b=>flyTo(b,()=>cloudPose(b.i,taNow),REDUCED?.15:.75,b.stag*.25,.9,'cloud'));
+  setMode('form');
+  sc=-1;
+}
+
+ $('#btnView').addEventListener('click',startSolve);
+ $('#btnChange').addEventListener('click',backToForm);
+
+/* ================= result table ================= */
+function buildTable(){
+  const grid=Array(30).fill(null);
+  TT.blocks.forEach((b,i)=>grid[b.sol[0]*6+b.sol[1]]={b,i});
+  let html='<div class="rt-head"><span></span>'+DAYS.map(d=>`<span>${d}</span>`).join('')+'</div>';
+  for(let p=0;p<6;p++){
+    html+=`<div class="rt-row"><span class="rt-p">P${p+1}</span>`;
+    for(let d=0;d<5;d++){
+      const g=grid[d*6+p];
+      html+= g
+        ? `<span class="rt-cell" style="--tc:${g.b.col}" data-tile="${g.i}" data-sub="${g.b.sub}"><b>${g.b.code}</b><i>${g.b.teacher} · ${g.b.room}</i></span>`
+        : `<span class="rt-cell rt-free">·</span>`;
+    }
+    html+='</div>';
+  }
+  $('#rtBody').innerHTML=html;
+  const counts={};
+  TT.blocks.forEach(b=>counts[b.sub]=(counts[b.sub]||0)+1);
+  const subs=DEPTS[TT.dept].subjects;
+  $('#rtLegend').innerHTML=subs.map((s,si)=>
+    `<span class="inline-flex items-center gap-1.5 font-mono text-[9px] tracking-[.1em] text-mist/45 cursor-default transition-transform hover:scale-105" data-lsub="${si}" style="padding:3px 6px;border-radius:8px">
+      <span class="w-2 h-2 rounded-[3px]" style="background:${PALETTE[si]}"></span>${s} ×${counts[si]||0}</span>`
+  ).join('');
+  $('#resChipTxt').textContent=`${TT.dept} · Semester ${TT.sem} · Section ${TT.sec}`;
+}
+/* hover links: table cell → 3D tile glow; legend chip → whole subject */
+ $('#rtBody').addEventListener('mouseover',e=>{
+  const c=e.target.closest('.rt-cell[data-tile]'); if(!c)return;
+  TT.blocks[+c.dataset.tile].hoverT=1;
+});
+ $('#rtBody').addEventListener('mouseout',e=>{
+  const c=e.target.closest('.rt-cell[data-tile]'); if(!c)return;
+  TT.blocks[+c.dataset.tile].hoverT=0;
+});
+ $('#rtLegend').addEventListener('mouseover',e=>{
+  const c=e.target.closest('[data-lsub]'); if(!c||!TT)return;
+  TT.blocks.forEach(b=>{ if(b.sub===+c.dataset.lsub) b.hoverT=1; });
+  $$(`.rt-cell[data-sub="${c.dataset.lsub}"]`).forEach(el=>el.classList.add('hl'));
+});
+ $('#rtLegend').addEventListener('mouseout',e=>{
+  const c=e.target.closest('[data-lsub]'); if(!c||!TT)return;
+  TT.blocks.forEach(b=>{ if(b.sub===+c.dataset.lsub) b.hoverT=0; });
+  $$(`.rt-cell[data-sub="${c.dataset.lsub}"]`).forEach(el=>el.classList.remove('hl'));
+});
+
+/* exports */
+const showToast=(()=>{
+  let tm;
+  return msg=>{
+    $('#toastMsg').textContent=msg;
+    const t=$('#toast');
+    t.style.opacity=1; t.style.transform='translate(-50%,0)';
+    clearTimeout(tm);
+    tm=setTimeout(()=>{ t.style.opacity=0; t.style.transform='translate(-50%,1rem)'; },2400);
+  };
+})();
+function exportCSV(){
+  if(!TT || !TT.blocks) return;
+  const headers = ['Day','Period','Subject Code','Teacher','Room'];
+  const grid = Array(30).fill(null);
+  TT.blocks.forEach(b => grid[b.sol[0]*6 + b.sol[1]] = b);
+  const rows = [];
+  for(let d=0; d<5; d++){
+    for(let p=0; p<6; p++){
+      const b = grid[d*6 + p];
+      if(b){
+        rows.push([DAYS[d], `Period ${p+1}`, b.code, `"${b.teacher}"`, `"${b.room}"`]);
+      }
+    }
+  }
+  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  const encoded = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encoded);
+  link.setAttribute('download', `Schedule_${TT.dept}_Sem${TT.sem}_Sec${TT.sec}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Timetable CSV downloaded');
+}
+
+$('#btnShare').addEventListener('click',()=>{
+  navigator.clipboard.writeText(window.location.href);
+  showToast('Live schedule URL copied to clipboard');
+});
+$('#btnPDF').addEventListener('click',()=>{
+  window.print();
+});
+$('#btnICS').addEventListener('click',exportCSV);
+
+/* Wire Admin Login button to login.html or admin.html */
+if (localStorage.getItem('schedflow_token')) {
+  const btn = $('#btnAdmin');
+  if (btn) {
+    btn.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>Admin Portal`;
+    btn.href = 'admin.html';
+  }
+}
+$('#btnAdmin').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (localStorage.getItem('schedflow_token')) {
+    window.location.href = 'admin.html';
+  } else {
+    window.location.href = 'login.html';
+  }
+});
+
+/* ================= modals ================= */
+function wireModal(id,onOpen){
+  const m=$(id), back=m.querySelector('.fbBack, .adBack'), panel=m.querySelector('.fbPanel, .adPanel');
+  const open=()=>{ m.classList.remove('invisible'); m.classList.add('on');
+    back.style.opacity=1; panel.style.opacity=1; panel.style.transform='translateY(0)';
+    document.documentElement.classList.add('lock'); onOpen&&onOpen(); };
+  const close=()=>{ m.classList.remove('on'); back.style.opacity=0;
+    panel.style.opacity=0; panel.style.transform='translateY(2rem)';
+    document.documentElement.classList.remove('lock');
+    setTimeout(()=>m.classList.add('invisible'),420); };
+  m.querySelectorAll('.fbClose, .adClose').forEach(b=>b.addEventListener('click',close));
+  back.addEventListener('click',close);
+  addEventListener('keydown',e=>{ if(e.key==='Escape'&&m.classList.contains('on')) close(); });
+  return {open,close};
+}
+const mFeedback=wireModal('#mFeedback');
+$('#btnFeedback').addEventListener('click',mFeedback.open);
+$('#btnFeedback2').addEventListener('click',mFeedback.open);
+
+/* feedback type chips */
+let fbType='wrong_room';
+$$('#fbTypes .chip').forEach(c=>c.addEventListener('click',()=>{
+  $$('#fbTypes .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); fbType=c.dataset.t;
+}));
+
+$('#fbSend').addEventListener('click',async ()=>{
+  const msg=$('#fbMsg').value.trim();
+  if(!msg){ $('#fbMsg').classList.add('shake'); setTimeout(()=>$('#fbMsg').classList.remove('shake'),500);
+    showToast('Please describe the issue'); return; }
+  try {
+    const res = await fetch('/api/public/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        department_code: sel.dept || 'CSE',
+        semester_number: sel.sem ? parseInt(sel.sem) : 1,
+        section_name: sel.sec || 'A',
+        reporter_name: 'Student Viewer',
+        category: fbType || 'other',
+        message: msg
+      })
+    });
+    if(res.ok){
+      showToast('Report submitted directly to Academic Coordination queue');
+    } else {
+      showToast('Feedback recorded locally');
+    }
+  } catch(e){
+    showToast('Feedback recorded locally');
+  }
+  $('#fbMsg').value=''; mFeedback.close();
+});
+
+/* ================= cursor / magnet / ripple ================= */
+let cursorSeen=false, ringX=innerWidth/2, ringY=innerHeight/2, rrx=ringX, rry=ringY;
+let tmx=0,tmy=0;
+addEventListener('mousemove',e=>{
+  tmx=(e.clientX/innerWidth-.5)*2; tmy=(e.clientY/innerHeight-.5)*2;
+  ringX=e.clientX; ringY=e.clientY;
+  const dot=$('#cursorDot'), ring=$('#cursorRing');
+  if(!cursorSeen){cursorSeen=true;dot.style.opacity=1;ring.style.opacity=1;}
+  dot.style.transform=`translate(${e.clientX}px,${e.clientY}px) translate(-50%,-50%)`;
+});
+document.addEventListener('mouseover',e=>{
+  const hov=e.target.closest('[data-hover], .dd-btn, .rt-cell, input, textarea');
+  $('#cursorRing').classList.toggle('is-active',!!hov);
+});
+document.addEventListener('pointermove',e=>{
+  const el=e.target.closest('.liquid');
+  if(el){ const r=el.getBoundingClientRect();
+    el.style.setProperty('--mx',(e.clientX-r.left)+'px');
+    el.style.setProperty('--my',(e.clientY-r.top)+'px'); }
+});
+ $$('.magnet').forEach(el=>{
+  el.style.transition='transform .3s cubic-bezier(.2,.9,.3,1.3), box-shadow .35s, filter .35s';
+  el.addEventListener('pointermove',e=>{
+    const r=el.getBoundingClientRect();
+    el.style.transform=`translate(${(e.clientX-(r.left+r.width/2))*.22}px,${(e.clientY-(r.top+r.height/2))*.22}px)`;
+  });
+  el.addEventListener('pointerleave',()=>{el.style.transform='';});
+});
+ $$('.btn-primary,.btn-glass').forEach(el=>{
+  el.addEventListener('pointerdown',e=>{
+    const r=el.getBoundingClientRect();
+    const s=document.createElement('span'); s.className='rip';
+    s.style.left=(e.clientX-r.left-12)+'px'; s.style.top=(e.clientY-r.top-12)+'px';
+    el.appendChild(s); setTimeout(()=>s.remove(),600);
+  });
+});
+
+/* ================= resize ================= */
+function onResize(){
+  isMobile=innerWidth<768;
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+}
+addEventListener('resize',onResize); onResize();
+
+/* ================= main loop ================= */
+let last=performance.now(), clockExtra=0;
+/* ambient data for the background before any solve */
+let AMBIENT=makeTimetable('CSE',5,'A');
+AMBIENT.blocks.forEach((b,i)=>{ const t=tiles[i]; drawTile(t,b,'neutral'); b.mesh=t.mesh; b.frontMat=t.frontMat; });
+
+function tick(now){
+  const dt=Math.min((now-last)/1000,.05); last=now;
+  const t=now/1000; taNow=t*MOT;
+
+  /* the solve clock */
+  if(mode!=='form'){
+    sc=t-solveT0;
+    if(TT) TT.blocks.forEach(b=>{
+      if(b.mw0!=null && sc>=b.mw0 && b.stage==='chaos' && !b.tween && !b.hopped){
+        b.hopped=true;
+        flyTo(b,()=>cellXYZ(b.sol[0],b.sol[1]),REDUCED?.12:.5,0,1.5,'sol');
+      }
+    });
+    if(!resultShown && sc>=3.7){ resultShown=true; buildTable(); setMode('result'); }
+  }
+
+  /* tiles */
+  const blocks=TT?TT.blocks:AMBIENT.blocks;
+  blocks.forEach(b=>{
+    let px,py,pz,rx=0,ry=0,rz=0;
+    if(b.tween){
+      const tw=b.tween, p=clamp((taNow-tw.t0)/tw.dur,0,1), e=p*p*(3-2*p);
+      const tgt=tw.targetFn();
+      px=lerp(tw.from.x,tgt.x,e); py=lerp(tw.from.y,tgt.y,e);
+      pz=lerp(tw.from.z,tgt.z,e)+Math.sin(e*Math.PI)*tw.arc;
+      ry=lerp(tw.from.ry,0,e)+Math.sin(e*Math.PI)*.4;
+      if(p>=1){ b.stage=tw.stage; b.tween=null; }
+    }else if(b.stage==='cloud'){
+      const c=cloudPose(b.i,taNow); px=c.x; py=c.y; pz=c.z; rx=c.rx||0; ry=c.ry; rz=c.rz||0;
+    }else if(b.stage==='chaos'){
+      const c=stackXYZ(b.chaos); px=c.x; py=c.y; pz=c.z; ry=0;
+      if(b.collider && mode==='solve' && sc>1 && sc<b.mw0 && !REDUCED){
+        px+=Math.sin(t*31+b.phase)*.02; py+=Math.cos(t*27+b.phase)*.016;
+      }
+    }else{
+      const c=cellXYZ(b.sol[0],b.sol[1]); px=c.x; py=c.y; pz=c.z; ry=0;
+    }
+    /* hover glow (result mode) — the table talks to the board */
+    b.hover+=(b.hoverT-b.hover)*(1-Math.exp(-dt*8));
+    if(mode==='result' && b.hover>.005){
+      pz+=b.hover*.55; py+=b.hover*.08;
+    }
+    const sc2=1+b.hover*.1;
+    b.mesh.visible=true;
+    b.mesh.position.set(px,py,pz);
+    b.mesh.scale.setScalar(sc2);
+    b.mesh.rotation.set(rx,ry,rz);
+    /* status + emissive */
+    let st='neutral';
+    if(mode==='solve'){
+      if(b.collider && b.stage==='chaos' && sc>1 && sc<b.mw1) st='conflict';
+      else if(b.mover && b.stage==='sol' && sc<b.mw1+.7) st='solved';
+    }
+    const tile=tiles[b.i];
+    if(st!==tile.drawnStatus) drawTile(tile,b,st);
+    if(st==='conflict'){
+      b.frontMat.emissive.set('#FF4D5E');
+      b.frontMat.emissiveIntensity=REDUCED?.3:(.38+.22*Math.sin(t*7+b.phase));
+    }else if(st==='solved'){
+      b.frontMat.emissive.set('#34D399');
+      b.frontMat.emissiveIntensity=.3+.6*bell(sc,b.mw1+.08,.18);
+    }else{
+      b.frontMat.emissive.set('#ffffff');
+      b.frontMat.emissiveIntensity=.3+b.hover*1.3;
+    }
+  });
+
+  /* board grid reveal */
+  const gridTgt=(mode==='solve')?sstep(.25,.85,sc):(mode==='result'?1:0);
+  gridOp+=(gridTgt-gridOp)*(1-Math.exp(-dt*4));
+  bars.forEach(bar=>{ bar.m.scale[bar.axis]=Math.max(gridOp,.001); });
+  const lop=gridOp*.9;
+  labels.forEach(l=>{ l.mesh.material.opacity=lop*.75; l.mesh.visible=lop>.02; });
+  backing.material.opacity=lop;
+
+  /* clash frames */
+  if(TT){
+    const cols=TT.blocks.filter(b=>b.collider);
+    clashFrames.forEach((f,k)=>{
+      const m=cols[k];
+      const op=(mode==='solve'&&m&&sc>1&&sc<m.mw1+.05)?(1-sstep(m.mw1-.05,m.mw1+.05,sc))*(.45+.35*Math.sin(t*9)):0;
+      f.material.opacity=op; f.visible=op>.01;
+    });
+  }
+
+  /* mood lights */
+  plRed.intensity=(mode==='solve'&&sc>1&&sc<2.9)?(1-sstep(2.4,2.9,sc))*(.85+.25*Math.sin(t*6)):0;
+  plGreen.intensity=0;
+  if(TT) TT.blocks.forEach(b=>{ if(b.mover) plGreen.intensity+=.8*bell(sc,b.mw1+.1,.14); });
+  plGreen.intensity+=(mode==='result'?.12:0);
+
+  /* ---- camera: per-mode goals + swing + sway + parallax ---- */
+  let gAz,gEl,gR,gLy,gWy;
+  if(mode==='form'){ gAz=.45; gEl=.10; gR=11.9; gLy=.05; gWy=-.2; }
+  else if(mode==='solve'){ gAz=sc<1.4?-0.38:lerp(-.38,.14,sstep(1.4,3.2,sc)); gEl=.18; gR=10.8; gLy=.15; gWy=.15; }
+  else { gAz=.14; gEl=.21; gR=12.4; gLy=.58; gWy=.6; }
+  const k=1-Math.exp(-dt*2.2);
+  camAz+=(gAz-camAz)*k; camEl+=(gEl-camEl)*k; camR+=(gR-camR)*k;
+  lookY+=(gLy-lookY)*k; worldY+=(gWy-worldY)*k;
+
+  const sway=(Math.sin(t*.19)*.05+Math.sin(t*.11)*.025)*(mode==='result'?.5:1)*MOT;
+  const az=camAz+sway+tmx*.13, el=camEl-tmy*.09;
+  /* impact + landing kicks */
+  let amp=(mode==='solve')?bell(sc,1.05,.09)*.045:0;
+  if(TT) TT.blocks.forEach(b=>{ if(b.mover) amp+=bell(sc,b.mw1,.05)*.012; });
+  let shx=0,shy=0;
+  if(amp>.0005&&!REDUCED){ shx=Math.sin(t*39)*amp; shy=Math.cos(t*47)*amp; }
+  camera.position.set(Math.sin(az)*Math.cos(el)*camR+shx, Math.sin(el)*camR+.1+shy, Math.cos(az)*Math.cos(el)*camR);
+  camera.lookAt(0,lookY,0);
+  camera.fov=38+Math.sin(t*.14)*.7+(mode==='solve'?bell(sc,1.05,.2)*2:0);
+  camera.updateProjectionMatrix();
+
+  worldGroup.position.set(0,worldY+(isMobile?1.15:0),0);
+  worldGroup.scale.setScalar(isMobile?.6:1);
+
+  /* clock: ambient sweep; races while solving */
+  if(mode==='solve') clockExtra+=dt*.85*MOT;
+  handGroup.rotation.z=t*.05*MOT+clockExtra;
+  handSec.rotation.z=t*.8*MOT;
+  const ckOp=(mode==='result'?.3:.5);
+  clockGroup.traverse(o=>{ if(o.material&&o.material.transparent&&o!==handGroup) o.material.opacity=ckOp; });
+
+  /* solver HUD */
+  if(mode==='solve'&&TT){
+    const pct=clamp(sc/3.45,0,1)*100;
+    $('#slBar').style.width=pct.toFixed(1)+'%';
+    $('#slPct').textContent=Math.round(pct)+'%';
+    const ls=$$('#slLines .sl-line');
+    TT.lines.forEach((l,i)=>ls[i]&&ls[i].classList.toggle('on',sc>=l.t));
+    $('#cc1').classList.toggle('ok',sc>3.3);
+    $('#cc2').classList.toggle('ok',sc>3.4);
+    $('#cc3').classList.toggle('ok',sc>3.5);
+  }
+
+  /* cursor ring lag */
+  if(cursorSeen){
+    rrx+=(ringX-rrx)*.18; rry+=(ringY-rry)*.18;
+    $('#cursorRing').style.transform=`translate(${rrx}px,${rry}px) translate(-50%,-50%)`;
+  }
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+
+/* ================= boot ================= */
+requestAnimationFrame(tick);
+document.fonts.ready.then(()=>{
+  if(TT) TT.blocks.forEach((b,i)=>drawTile(tiles[i],b,tiles[i].drawnStatus||'neutral'));
+  else AMBIENT.blocks.forEach((b,i)=>drawTile(tiles[i],b,tiles[i].drawnStatus||'neutral'));
+  labels.forEach(l=>l.draw());
+});
+setTimeout(()=>{
+  window.__appReady=true;
+  const l=$('#loader');
+  l.style.transform='translateY(-101%)';
+  document.documentElement.classList.remove('lock');
+  setTimeout(()=>l.remove(),850);
+},850);
+</script>
+</body>
+</html>

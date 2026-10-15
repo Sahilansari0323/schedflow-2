@@ -1,0 +1,575 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #3D81E3;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --text-xs: 0.875rem; /* 14px instead of 12px (+2px) */
+  --text-sm: 1rem;     /* 16px instead of 14px (+2px) */
+  --text-base: 1.125rem; /* 18px instead of 16px (+2px) */
+  --text-lg: 1.25rem;  /* 20px instead of 18px (+2px) */
+  --text-xl: 1.375rem; /* 22px instead of 20px (+2px) */
+  --text-2xl: 1.625rem; /* 26px instead of 24px (+2px) */
+  --text-3xl: 2rem;     /* 32px instead of 30px (+2px) */
+}
+
+html {
+  font-size: 18px; /* Global +2px increase across all words */
+}
+
+html, body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0c0c0c;
+  color: #ffffff;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none;
+}
+
+/* Ensure micro-text and standard text sizes are increased by 2px */
+[class*="text-[9px]"] { font-size: 11px !important; }
+[class*="text-[10px]"] { font-size: 12px !important; }
+[class*="text-[11px]"] { font-size: 13px !important; }
+[class*="text-[12px]"] { font-size: 14px !important; }
+.text-xs { font-size: 14px !important; line-height: 1.4 !important; }
+.text-sm { font-size: 16px !important; line-height: 1.5 !important; }
+.text-base { font-size: 18px !important; line-height: 1.6 !important; }
+.text-lg { font-size: 20px !important; line-height: 1.5 !important; }
+.text-xl { font-size: 22px !important; line-height: 1.4 !important; }
+.text-2xl { font-size: 26px !important; line-height: 1.3 !important; }
+
+/* 120 FPS Smooth hardware-accelerated transforms */
+.hardware-accelerated {
+  transform: translateZ(0);
+  will-change: transform, scroll-position;
+  backface-visibility: hidden;
+}
+
+/* iPhone Fluid Liquid Glass Button */
+.iphone-liquid-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.4), 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.iphone-liquid-glass:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 1.5px 3px rgba(255, 255, 255, 0.7), 0 8px 30px rgba(0, 210, 255, 0.3);
+  transform: translateY(-1px) scale(1.03);
+}
+
+.iphone-liquid-glass:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+::selection {
+  background-color: rgba(61, 129, 227, 0.3);
+  color: #ffffff;
+}
+
+@keyframes shiny {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shiny {
+  animation: shiny 6s linear infinite;
+}
+
+/* Liquid-glass utility */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Section 8 — Pricing CSS */
+.c3-pricing-section {
+  position: relative;
+  padding: 40px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+.c3-watermark-container {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  text-align: center;
+  margin-top: 40px;
+  z-index: 2;
+}
+
+.c3-watermark-main {
+  font-size: 9rem;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  filter: url(#c3-noise);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.c3-watermark-line-1 {
+  color: #fff;
+}
+
+.c3-watermark-line-2 {
+  background: linear-gradient(to right, #091020 0%, #0B2551 25%, #A4F4FD 65%, #00d2ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.c3-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 60px;
+  transform: translateX(20px);
+  position: relative;
+  z-index: 3;
+}
+
+.c3-card {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4));
+  backdrop-filter: blur(14px) brightness(0.91);
+  -webkit-backdrop-filter: blur(14px) brightness(0.91);
+  border: 1px solid rgba(255, 255, 255, 1);
+  border-radius: 44px;
+  padding: 50px 24px;
+  min-height: 580px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.6s cubic-bezier(.22, 1, .36, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.c3-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
+  pointer-events: none;
+}
+
+.c3-card:hover {
+  background: rgba(15, 15, 15, 0.6);
+  border-color: rgba(34, 211, 238, 0.7);
+  transform: translateY(-12px) scale(1.01);
+}
+
+.c3-card-pro {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.55));
+}
+
+.c3-tier-small {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.c3-tier-large {
+  font-size: 2.8rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-top: 8px;
+}
+
+.c3-desc {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.45);
+  min-height: 3.2em;
+  margin-top: 16px;
+  margin-bottom: 40px;
+  line-height: 1.5;
+}
+
+.c3-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.c3-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+
+.c3-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.c3-btn {
+  background: #fff;
+  color: #000;
+  padding: 10px 32px;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin-top: auto;
+  border: none;
+  cursor: pointer;
+  align-self: center;
+  transition: all 0.3s cubic-bezier(.22, 1, .36, 1);
+}
+
+.c3-btn:hover {
+  background: #f5f5f5;
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+}
+
+.c3-toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 32px;
+  padding-right: 20px;
+}
+
+.c3-toggle {
+  width: 52px;
+  height: 28px;
+  background: #fff;
+  border-radius: 100px;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  transition: background 0.3s cubic-bezier(.4, 0, .2, 1);
+  padding: 0;
+}
+
+.c3-toggle-knob {
+  width: 20px;
+  height: 20px;
+  background: #000;
+  border-radius: 50%;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+}
+
+.c3-toggle.active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.c3-toggle.active .c3-toggle-knob {
+  transform: translateX(24px);
+  background: #fff;
+}
+
+@media (max-width: 1024px) {
+  .c3-watermark-main {
+    font-size: 3.5rem;
+    filter: none;
+  }
+  .c3-watermark-line-2 {
+    background: none;
+    -webkit-text-fill-color: #00d2ff;
+    color: #00d2ff;
+  }
+  .c3-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    transform: none;
+    width: 100vw;
+    padding: 0 20px;
+    gap: 16px;
+    scrollbar-width: none;
+  }
+  .c3-card {
+    flex: 0 0 320px;
+    scroll-snap-align: center;
+  }
+  .c3-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .c3-toggle-wrap {
+    justify-content: center;
+    padding-right: 0;
+  }
+}
+
+/* ========================================================================= */
+/* ========================================================================= */
+/* WHATSAPP.COM SIGNATURE WAVE FILL BUTTON ANIMATION (COVERS IN GREEN #25D366)*/
+/* Exact same 2.5s speed and physics as frontend6                            */
+/* Scoped STRICTLY to Landing Page (.page-landing) & Public Timetable (.page-timetable) */
+/* Zero wave on Admin Portal (.page-admin) and Login Page (.page-login)      */
+/* Fully covers black & dark buttons with unmasked wave pseudo-element       */
+/* ========================================================================= */
+
+/* 1. Base Button Container Properties on Landing & Timetable pages */
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled]),
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]),
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]),
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]),
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *),
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  transition: color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+/* 2. Rising Wave Pseudo-Element (Clears any liquid-glass -webkit-mask clipping for black buttons) */
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled])::before,
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled])::before,
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled])::before,
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled])::before,
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before,
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *)::before {
+  content: "" !important;
+  position: absolute !important;
+  left: -65% !important;
+  right: -65% !important;
+  top: 112% !important;
+  height: 540% !important;
+  background: #25D366 !important; /* WhatsApp signature vibrant emerald green */
+  border-radius: 50% 50% 0 0 !important;
+  -webkit-mask: none !important;
+  mask: none !important;
+  -webkit-mask-composite: normal !important;
+  mask-composite: add !important;
+  padding: 0 !important;
+  transition: top 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* 3. Wave Floods Up (2.5s steady coverage - identical to frontend6) */
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled]):hover::before,
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover::before,
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover::before,
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover::before,
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before,
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover::before {
+  top: -160% !important;
+  transition: top 2.5s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+/* 4. Button Pop-Out & Lush Elevated Green Shadow on Hover */
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled]):hover,
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover,
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover,
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover,
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover,
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover {
+  transform: translateY(-3.5px) !important;
+  color: #052e16 !important;
+  border-color: #25D366 !important;
+  box-shadow: 0 0 0 1.5px #25D366, 0 14px 32px -4px rgba(37, 211, 102, 0.45), 0 6px 14px -2px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* 5. Button Press Feedback */
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled]):active,
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):active,
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):active,
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):active,
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active,
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):active {
+  transform: translateY(0px) scale(0.97) !important;
+}
+
+/* 6. Content: Text and icons sit above wave (z-index: 2) and turn to dark green */
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled]) > *,
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]) > *,
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]) > *,
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]) > *,
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > *,
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *) > * {
+  position: relative !important;
+  z-index: 2 !important;
+  transition: color 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+              stroke 1.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+              fill 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled]):hover *,
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover *,
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover *,
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover *,
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover *,
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover * {
+  color: #052e16 !important;
+}
+
+.page-landing button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not(.c3-toggle):not([disabled]):hover svg,
+.page-landing [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover svg,
+.page-landing .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-landing .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-landing .c3-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-landing .iphone-liquid-glass:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-landing a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-landing a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-timetable button:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover svg,
+.page-timetable [role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):not([disabled]):hover svg,
+.page-timetable .btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-timetable .apple-btn:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-timetable a.btn-wave:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg,
+.page-timetable a[role="button"]:not(.no-wave):not([data-no-wave="true"]):not(.ai-assistant-widget *):hover svg {
+  color: #052e16 !important;
+  stroke: #052e16 !important;
+}
+
+/* ========================================================================= */
+/* STRICT EXCLUSIONS: ZERO WAVE ON ADMIN PORTAL, LOGIN, & ASSISTANT WIDGET   */
+/* ========================================================================= */
+
+.page-admin .btn-wave::before,
+.page-admin .apple-btn::before,
+.page-admin .iphone-liquid-glass::before,
+.page-login .btn-wave::before,
+.page-login .apple-btn::before,
+.page-login .iphone-liquid-glass::before,
+aside *::before,
+.admin-sidebar *::before,
+.ai-assistant-widget *::before,
+.no-wave::before,
+[data-no-wave="true"]::before,
+.c3-toggle::before,
+.c3-toggle-knob::before {
+  display: none !important;
+  content: none !important;
+}
+
+.page-admin .btn-wave:hover,
+.page-admin .apple-btn:hover,
+.page-admin .iphone-liquid-glass:hover,
+.page-login .btn-wave:hover,
+.page-login .apple-btn:hover,
+.page-login .iphone-liquid-glass:hover,
+aside *:hover,
+.admin-sidebar *:hover,
+.ai-assistant-widget *:hover,
+.no-wave:hover,
+[data-no-wave="true"]:hover,
+.c3-toggle:hover {
+  transform: none !important;
+}
+
